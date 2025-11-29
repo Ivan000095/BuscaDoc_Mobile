@@ -7,7 +7,6 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 // ignore: depend_on_referenced_packages
 import 'package:xd/controller/doctorcontroller.dart';
-import 'package:xd/model/db.dart';
 import 'package:xd/model/doctores.dart';
 import 'package:xd/theme/tema.dart';
 import 'package:xd/utils/formatos.dart';
@@ -29,8 +28,7 @@ class ProductDetailsView extends StatelessWidget {
   final TextEditingController _controller = TextEditingController();
 
   Future<List<Doctores>> _doctors() async {
-    Database db = await BaseDatos.abreBD();
-    Future<List<Doctores>> doctores = Doctores.all(db);
+    Future<List<Doctores>> doctores = Doctores.all();
     return doctores;
   }
 

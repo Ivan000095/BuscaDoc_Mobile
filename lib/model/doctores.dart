@@ -1,4 +1,7 @@
-import 'package:sqflite/sqflite.dart';
+// ignore_for_file: avoid_print, avoid_function_literals_in_foreach_calls
+
+import 'dart:convert' as convert;
+import 'package:http/http.dart' as http;
 
 class Doctores {
   int id;
@@ -95,6 +98,43 @@ class Doctores {
   //   return [d1, d2, d3, d4];
   // }
 
+  static Future<List<Doctores>> all() async {
+    var url = Uri.https('https://ivanlp.infinityfree.me', '/api/products');
+
+    // Await the http get response, then decode the json-formatted response.
+    var response = await http.get(url);
+    if (response.statusCode == 200) {
+      var jsonResponse =
+          convert.jsonDecode(response.body) as Map<String, dynamic>;
+      List doctoresJson = jsonResponse['doctors'];
+      List<Doctores> doctores = [];
+      doctoresJson.forEach((element) {
+        doctores.add(
+          Doctores(
+            id: element['id'] as int,
+            especialidad: element['especialidad'] as String,
+            nombre: element['nombre'] as String,
+            descripcion: element['descripcion'] as String,
+            fecha: DateTime.parse(element['fecha'] as String),
+            image: element['image'] as String,
+            telefono: element['telefono'] as String,
+            horarioentrada: element['horarioentrada'] as int,
+            horariosalida: element['horariosalida'] as int,
+            idioma: element['idioma'] as String,
+            cedula: element['cedula'] as String,
+            direccion: element['direccion'] as String,
+            costos: element['costos'] as int,
+          ),
+        );
+      });
+      return doctores;
+    } else {
+      print('Request failed with status: ${response.statusCode}.');
+    }
+    return [];
+  }
+
+  /* CONSULTA LOCAL
   static Future<List<Doctores>> all(Database db) async {
     List resultado = await db.query("doctores");
     List<Doctores> doctores = [];
@@ -125,4 +165,5 @@ class Doctores {
       );
     return true;
   }
+  */
 }

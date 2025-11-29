@@ -70,7 +70,7 @@ class _VistaInicioState extends State<VistaInicio>
   }
 
   Future<void> _doctors() async {
-    List<Doctores> doctores = await Doctores.all(db);
+    List<Doctores> doctores = await Doctores.all();
     setState(() {
       this.doctores = doctores;
     });
