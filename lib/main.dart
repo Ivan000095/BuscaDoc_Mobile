@@ -101,10 +101,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   _pass(),
                   const SizedBox(height: 30),
                   _boton(),
-                  Text(
-                    'O',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
                   const SizedBox(height: 15),
                   _botongoogle(),
                   const SizedBox(height: 20),

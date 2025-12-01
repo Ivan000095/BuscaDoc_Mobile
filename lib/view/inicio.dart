@@ -177,7 +177,9 @@ class _VistaInicioState extends State<VistaInicio>
             Get.to(() => ProductDetailsView(doctor: doctores[index]));
           },
           onFavoritePressed: () {},
-          shortDescription: doctores[index].descripcion,
+          shortDescription: doctores[index].descripcion.length > 60
+              ? '${doctores[index].descripcion.substring(0, 60)}...'
+              : doctores[index].descripcion,
           rating: 4.2,
           discountPercentage: 35.0,
           isAvailable: Formatos.compararhoras(
@@ -286,7 +288,7 @@ class _VistaInicioState extends State<VistaInicio>
   }
 
   Widget _pagina4() {
-    return const AgendarCitaPage(title: 'buscadoc',);
+    return const AgendarCitaPage(title: 'buscadoc');
   }
 
   Widget _statusEntrega(DateTime fechaentrega) {
