@@ -25,6 +25,7 @@ class MyApp extends StatelessWidget {
         '/inicio': (context) => const VistaInicio(title: 'BuscaDoc'),
         '/main': (context) => const MyApp(),
         '/vistaentrega': (context) => VistaEntrega(title: 'BuscaDoc'),
+        '/mapa': (context) => VistaEntrega(title: 'BuscaDoc'),
         // '/cita': (context) => AgendarCitaPage(title: 'te amo brava'), // Comentado si no usas esta ruta aún
       },
     );

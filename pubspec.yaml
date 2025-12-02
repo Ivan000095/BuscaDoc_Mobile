@@ -37,6 +37,8 @@ dependencies:
   sqflite: ^2.4.2
   cupertino_icons: ^1.0.8
   geolocator: ^14.0.2
+  baseflow_plugin_template: ^2.2.0
+  permission_handler: ^12.0.1
 
 dev_dependencies:
   flutter_test:
