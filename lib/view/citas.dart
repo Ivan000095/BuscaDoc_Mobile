@@ -1,13 +1,30 @@
+import 'package:file_picker/file_picker.dart';
+import 'package:xd/model/doctores.dart';
 import 'package:xd/theme/tema.dart';
 import 'package:flutter/material.dart';
 
 class AgendarCitaPage extends StatelessWidget {
-  const AgendarCitaPage({super.key, required this.title});
-  final String title;
+  AgendarCitaPage({super.key, required this.doctor});
+  final Doctores doctor;
+  final TextEditingController _ctrlArchivo = TextEditingController();
+
+
+  Future<void> _seleccionarArchivo() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles();
+
+    if (result != null) {
+      PlatformFile file = result.files.first;
+      _ctrlArchivo.text = file.name; 
+    }
+  }
 
   @override
   Widget build(BuildContext contex) {
     return Scaffold(
+      appBar: AppBar(
+        title: Text(doctor.nombre, style: TextStyle(color: Colors.white)),
+        backgroundColor: MiTema.azulMarino,
+      ),
       backgroundColor: MiTema.blanco,
       body: SafeArea(
         child: Padding(
@@ -19,52 +36,24 @@ class AgendarCitaPage extends StatelessWidget {
                 // Título principal
                 Center(
                   child: Text(
-                    "Agendar Cita",
+                    "Agendar Cita a ${doctor.nombre}",
                     style: TextStyle(
-                      fontSize: 28,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: MiTema.negro,
                     ),
                   ),
                 ),
 
-                const SizedBox(height: 8),
-
-                // Subtítulo
-                Center(
-                  child: Text(
-                    "La app en donde encontrarás a los mejores doctores",
-                    style: TextStyle(color: MiTema.negro),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Texto secundario
-                Center(
-                  child: Text(
-                    "Tu salud es lo más importante, acude a tus citas médicas",
-                    style: TextStyle(color: MiTema.negro),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-
                 const SizedBox(height: 32),
-
-                // Campo: Médico
-                TextField(
-                  decoration: InputDecoration(
-                    labelText: "Médico",
-                    filled: true,
-                    fillColor: MiTema.blanco,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(50),
-                    ),
+                Center(
+                  child: Icon(
+                    Icons.calendar_month_outlined,
+                    size: 80,
+                    color: MiTema.negro,
                   ),
                 ),
                 const SizedBox(height: 20),
-
                 // Campo: Motivo de la consulta
                 TextField(
                   decoration: InputDecoration(
@@ -79,17 +68,6 @@ class AgendarCitaPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 30),
 
-                // Icono calendario
-                Center(
-                  child: Icon(
-                    Icons.calendar_month_outlined,
-                    size: 80,
-                    color: MiTema.negro,
-                  ),
-                ),
-
-                const SizedBox(height: 30),
-
                 // Campo: Hora de la cita
                 TextField(
                   decoration: InputDecoration(
@@ -98,6 +76,28 @@ class AgendarCitaPage extends StatelessWidget {
                     fillColor: MiTema.blanco,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(50),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 30,),
+
+                TextField(
+                  controller: _ctrlArchivo, // Muestra el nombre aquí
+                  readOnly: true, // ⚠️ IMPORTANTE: Bloquea el teclado
+                  onTap: _seleccionarArchivo, // Al tocar, abre el selector
+                  decoration: InputDecoration(
+                    labelText: "Adjuntar archivo (PDF, JPG...)", // Tu etiqueta
+                    filled: true,
+                    fillColor: MiTema.blanco, // Tu color
+                    prefixIcon: const Icon(Icons.attach_file), // Icono opcional
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(50), // Tu borde redondo
+                      borderSide: BorderSide(color: MiTema.azulavanda), // O el color que uses
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(50),
+                      borderSide: BorderSide(color: MiTema.negro, width: 2),
                     ),
                   ),
                 ),

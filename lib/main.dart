@@ -4,7 +4,6 @@ import 'package:sqflite/sqflite.dart';
 import 'package:xd/model/db.dart';
 import 'package:xd/model/usuarios.dart';
 import 'package:xd/theme/tema.dart';
-import 'package:xd/view/citas.dart';
 import 'package:xd/view/inicio.dart';
 // ignore: depend_on_referenced_packages
 import 'package:get/get.dart';
@@ -26,7 +25,7 @@ class MyApp extends StatelessWidget {
         '/inicio': (context) => const VistaInicio(title: 'BuscaDoc'),
         '/main': (context) => const MyApp(),
         '/vistaentrega': (context) => VistaEntrega(title: 'BuscaDoc'),
-        '/cita': (context) => AgendarCitaPage(title: 'te amo brava'),
+        // '/cita': (context) => AgendarCitaPage(title: 'te amo brava'), // Comentado si no usas esta ruta aún
       },
     );
   }
@@ -40,45 +39,62 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  // Controladores para los campos
   final TextEditingController _ctrlEmail = TextEditingController();
   final TextEditingController _ctrlPwd = TextEditingController();
   late Database db;
+  
+  late Future<bool> _futureInicializacion;
 
-  void initstate() async {
-    _abreBD();
+  @override
+  void initState() {
     super.initState();
+    // Iniciamos la carga de la BD una sola vez
+    _futureInicializacion = _abreBD();
   }
 
+  // Modificado para capturar errores
   Future<bool> _abreBD() async {
-    db = await BaseDatos.abreBD();
-    return true;
+    try {
+      db = await BaseDatos.abreBD();
+      print("Base de datos abrida correctamente");
+      return true;
+    } catch (e) {
+      print("ERROR CRÍTICO AL ABRIR BD: $e");
+      // Lanzamos el error para que el FutureBuilder lo detecte
+      throw Exception("No se pudo abrir la BD: $e");
+    }
   }
 
-  // Método void para validar credenciales locales
   void _validarCredenciales() async {
-    if (_ctrlEmail.text.isEmpty || _ctrlPwd.text.isEmpty){
-      SnackBar mensaje = SnackBar(content: Text("pendejo, rellénalo", style: TextStyle(color: Colors.white),), backgroundColor: Colors.red,);
-      ScaffoldMessenger.of(context).showSnackBar(mensaje);
-    } else {
-    bool respuesta = await Usuario.valida(
-      db,
-      _ctrlEmail.text.trim(),
-      _ctrlPwd.text,
-    );
-    if (respuesta) {
-      // Éxito: navegar a inicio
-      Navigator.pushNamed(context, '/inicio');
-    } else {
-      // Error
+    if (_ctrlEmail.text.isEmpty || _ctrlPwd.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Usuario y/o contraseña incorrecta pendejoooo', 
-          style: TextStyle(color: Colors.white),),
+          content: Text("Por favor, rellena los campos", style: TextStyle(color: Colors.white)),
           backgroundColor: Colors.red,
         ),
       );
-    }
+    } else {
+      try {
+        bool respuesta = await Usuario.valida(
+          db,
+          _ctrlEmail.text.trim(),
+          _ctrlPwd.text,
+        );
+        if (respuesta) {
+          if (mounted) Navigator.pushNamed(context, '/inicio');
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Usuario y/o contraseña incorrecta', style: TextStyle(color: Colors.white)),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        print("Error validando usuario: $e");
+      }
     }
   }
 
@@ -86,9 +102,28 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: MiTema.azulblanco,
-      body: FutureBuilder(
-        future: _abreBD(),
+      body: FutureBuilder<bool>(
+        future: _futureInicializacion, 
         builder: (context, snapshot) {
+          // 1. Si hay error, lo mostramos en pantalla
+          if (snapshot.hasError) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error, color: Colors.red, size: 50),
+                  const SizedBox(height: 10),
+                  Text(
+                    "Error al cargar:\n${snapshot.error}", 
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          // 2. Si terminó y tiene datos, mostramos el login
           if (snapshot.hasData) {
             return SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 60),
@@ -104,13 +139,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 15),
                   _botongoogle(),
                   const SizedBox(height: 20),
-                  FooterSection(),
+                  const FooterSection(),
                 ],
               ),
             );
-          } else {
-            return CircularProgressIndicator();
-          }
+          } 
+          
+          // 3. Si no ha terminado, mostramos cargando
+          return const Center(child: CircularProgressIndicator());
         },
       ),
     );
@@ -120,7 +156,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Image.asset('assets/login.png', width: 200),
+        Image.asset('assets/login.png', width: 200, errorBuilder: (c,e,s)=> const Icon(Icons.person, size: 100)),
         const SizedBox(height: 10),
         Text(
           '¡Bienvenido!',
@@ -145,7 +181,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         const SizedBox(height: 8),
         TextField(
-          controller: _ctrlEmail, // ← Añadido controlador
+          controller: _ctrlEmail,
           decoration: InputDecoration(
             hintText: 'Correo electrónico',
             filled: true,
@@ -175,7 +211,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         const SizedBox(height: 8),
         TextField(
-          controller: _ctrlPwd, // ← Añadido controlador
+          controller: _ctrlPwd,
           obscureText: true,
           decoration: InputDecoration(
             hintText: 'Contraseña',
@@ -205,7 +241,7 @@ class _LoginScreenState extends State<LoginScreen> {
         SizedBox(
           width: double.infinity,
           child: ElevatedButton(
-            onPressed: _validarCredenciales, // ← Llama al método de validación
+            onPressed: _validarCredenciales,
             style: ElevatedButton.styleFrom(
               backgroundColor: MiTema.azulMarino,
               foregroundColor: MiTema.blanco,
@@ -242,7 +278,6 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-// PIE DE PÁGINA (sin cambios)
 class FooterSection extends StatelessWidget {
   const FooterSection({super.key});
 

@@ -43,9 +43,11 @@ class Formatos {
     return horario;
   }
 
+
   static bool compararhoras(int he, int hs) {
     DateTime ahora = DateTime.now();
     bool valor = ahora.hour > he && ahora.hour < hs ? true : false;
+    print('HORA DE AHORITA: ${ahora.hour}');
     return valor;
   }
 }

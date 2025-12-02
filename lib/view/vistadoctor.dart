@@ -171,7 +171,7 @@ class ProductDetailsView extends StatelessWidget {
               builder: (innerContext) {
                 return InkWell(
                   onTap: () {
-                    Get.to(() => AgendarCitaPage(title: 'BuscaDoc',));
+                    Get.to(() => AgendarCitaPage(doctor: doctor));
                   },
                   child: _boton(),
                 );
@@ -198,13 +198,12 @@ class ProductDetailsView extends StatelessWidget {
         itemCount: doctores.length,
         itemBuilder: (context, index) => Container(
           margin: const EdgeInsets.only(
-            right: 40,
+            right: 20,
             bottom: 5,
             left: 10,
             top: 10,
           ),
-          width: 90,
-          height: 80,
+          width: 100,
           decoration: BoxDecoration(
             boxShadow: [
               BoxShadow(
@@ -222,8 +221,8 @@ class ProductDetailsView extends StatelessWidget {
             children: <Widget>[
               Image.asset(
                 doctores[index].image,
-                width: 84,
-                height: 80,
+                width: 70,
+                height: 65,
               ), // Your image
               Padding(
                 padding: const EdgeInsets.all(6.0),

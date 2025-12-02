@@ -8,7 +8,6 @@ import 'package:xd/theme/tema.dart';
 import 'package:xd/model/doctores.dart';
 import 'package:xd/model/entrega.dart';
 import 'package:xd/utils/formatos.dart';
-import 'package:xd/view/citas.dart';
 import 'package:xd/view/menu.dart';
 import 'package:xd/view/vistadoctor.dart';
 import 'package:get/get.dart';
@@ -288,7 +287,7 @@ class _VistaInicioState extends State<VistaInicio>
   }
 
   Widget _pagina4() {
-    return const AgendarCitaPage(title: 'buscadoc');
+    return Text('página 4');
   }
 
   Widget _statusEntrega(DateTime fechaentrega) {
