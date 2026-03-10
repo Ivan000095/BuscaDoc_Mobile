@@ -1,18 +1,20 @@
 // ignore_for_file: depend_on_referenced_packages
 
+import 'package:buscadoc_mobile/doctor/vistaentrega.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_floating_bottom_bar/flutter_floating_bottom_bar.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:xd/model/db.dart';
-import 'package:xd/theme/tema.dart';
-import 'package:xd/model/doctores.dart';
-import 'package:xd/model/entrega.dart';
-import 'package:xd/utils/formatos.dart';
-import 'package:xd/view/mapa.dart';
-import 'package:xd/view/menu.dart';
-import 'package:xd/view/vistadoctor.dart';
+import 'package:buscadoc_mobile/model/db.dart';
+import 'package:buscadoc_mobile/theme/tema.dart';
+import 'package:buscadoc_mobile/model/doctores.dart';
+import 'package:buscadoc_mobile/model/entrega.dart';
+import 'package:buscadoc_mobile/utils/formatos.dart';
+import 'package:buscadoc_mobile/doctor/mapa.dart';
+import 'package:buscadoc_mobile/doctor/menu.dart';
+import 'package:buscadoc_mobile/doctor/vistadoctor.dart';
 import 'package:get/get.dart';
 import 'package:flutter_product_card/flutter_product_card.dart';
+import 'package:buscadoc_mobile/controller/doctorcontroller.dart';
 
 class VistaInicio extends StatefulWidget {
   const VistaInicio({super.key, required this.title});
@@ -36,14 +38,14 @@ class _VistaInicioState extends State<VistaInicio>
       child: SizedBox(
         height: 55,
         width: 40,
-        child: Center(child: Icon(icon, color: MiTema.azulMarino)),
+        child: Center(child: Icon(icon, color: MiTema.blanco)),
       ),
     );
   }
 
   late int currentPage;
   late TabController tabController;
-  final List<Color> colors = [MiTema.azulMarino];
+  final List<Color> colors = [MiTema.azulOscuro];
   late List<Entrega> entregas;
   late List<Doctores> doctores = [];
   late Database db;
@@ -94,7 +96,7 @@ class _VistaInicioState extends State<VistaInicio>
       child: Scaffold(
         appBar: AppBar(
           title: Text(widget.title),
-          backgroundColor: MiTema.azulMarino,
+          backgroundColor: MiTema.azulOscuro,
         ),
         drawer: menu(context),
         body: _bottom(),
@@ -103,8 +105,8 @@ class _VistaInicioState extends State<VistaInicio>
   }
 
   Widget _bottom() {
-    final Color barColor = MiTema.azulhielo;
-    final Color iconColor = MiTema.azulMarino;
+    final Color barColor = MiTema.azulOscuro;
+    final Color iconColor = MiTema.blanco;
     return BottomBar(
       fit: StackFit.expand,
       icon: (width, height) => Center(
@@ -146,7 +148,7 @@ class _VistaInicioState extends State<VistaInicio>
       child: TabBar(
         controller: tabController,
         indicator: UnderlineTabIndicator(
-          borderSide: BorderSide(color: MiTema.azulMarino, width: 4),
+          borderSide: BorderSide(color: MiTema.blanco, width: 4),
           insets: EdgeInsets.fromLTRB(16, 0, 16, 8),
         ),
         indicatorColor: Colors.transparent, // evita la línea por defecto
@@ -166,30 +168,30 @@ class _VistaInicioState extends State<VistaInicio>
     return ListView.separated(
       padding: const EdgeInsets.only(bottom: 80, left: 16, right: 16, top: 30),
       itemBuilder: (context, index) {
-        return ProductCard(
-          imageUrl: doctores[index].image,
-          categoryName: doctores[index].especialidad,
-          productName: doctores[index].nombre,
-          horarios:
-              '${Formatos.horario(doctores[index].horarioentrada)} - ${Formatos.horario(doctores[index].horariosalida)}',
-          currency: '',
-          onTap: () {
-            Get.to(() => ProductDetailsView(doctor: doctores[index]));
-          },
-          onFavoritePressed: () {},
-          shortDescription: doctores[index].descripcion.length > 60
-              ? '${doctores[index].descripcion.substring(0, 60)}...'
-              : doctores[index].descripcion,
-          rating: 4.2,
-          discountPercentage: 35.0,
-          isAvailable: Formatos.compararhoras(
-            doctores[index].horarioentrada,
-            doctores[index].horariosalida,
-          ),
-          cardColor: MiTema.blanco,
-          textColor: Colors.black,
-          borderRadius: 20.0,
-        );
+        // return ProductCard(
+        //   imageUrl: doctores[index].image,
+        //   categoryName: doctores[index].especialidad,
+        //   productName: doctores[index].nombre,
+        //   horarios:
+        //       '${Formatos.horario(doctores[index].horarioentrada)} - ${Formatos.horario(doctores[index].horariosalida)}',
+        //   currency: '',
+        //   onTap: () {
+        //     Get.to(() => ProductDetailsView(doctor: doctores[index]));
+        //   },
+        //   onFavoritePressed: () {},
+        //   shortDescription: doctores[index].descripcion.length > 60
+        //       ? '${doctores[index].descripcion.substring(0, 60)}...'
+        //       : doctores[index].descripcion,
+        //   rating: 4.2,
+        //   discountPercentage: 35.0,
+        //   isAvailable: Formatos.compararhoras(
+        //     doctores[index].horarioentrada,
+        //     doctores[index].horariosalida,
+        //   ),
+        //   cardColor: MiTema.blanco,
+        //   textColor: Colors.black,
+        //   borderRadius: 20.0,
+        // );
       },
       separatorBuilder: (context, index) {
         return Divider(color: Colors.transparent);
@@ -209,7 +211,7 @@ class _VistaInicioState extends State<VistaInicio>
   }
 
   Widget _fotoDoc() {
-    return Icon(Icons.person_pin, size: 150, color: MiTema.negro);
+    return Icon(Icons.person_pin, size: 150, color: MiTema.azulOscuro);
   }
 
   Widget _nombreDoc() {
@@ -251,15 +253,15 @@ class _VistaInicioState extends State<VistaInicio>
       padding: const EdgeInsets.only(bottom: 80, left: 16, right: 16, top: 30),
       itemBuilder: (context, index) {
         return ListTile(
-          tileColor: index % 2 == 0 ? MiTema.azulhielo : MiTema.azulgrisaceo,
+          tileColor: index % 2 == 0 ? MiTema.azul : MiTema.blanco,
           minVerticalPadding: 40,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
-            side: BorderSide(color: MiTema.azulhielo, width: 2),
+            side: BorderSide(color: MiTema.azul, width: 2),
           ),
           leading: Text(
             '${entregas[index].numero}',
-            style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+            style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: MiTema.azulOscuro),
           ),
           title: Text(
             Formatos.fecha(entregas[index].fecha),
@@ -272,10 +274,12 @@ class _VistaInicioState extends State<VistaInicio>
           ),
           trailing: _statusEntrega(entregas[index].fecha),
           onTap: () {
-            Navigator.pushNamed(
+            Navigator.push(
               context,
-              '/vistaentrega',
-              arguments: entregas[index],
+              MaterialPageRoute(
+                builder: (context) => const VistaEntrega(title: 'Detalle de Entrega'),
+                settings: RouteSettings(arguments: entregas[index]), // Pasas el objeto aquí
+              ),
             );
           },
         );
@@ -305,7 +309,7 @@ class _VistaInicioState extends State<VistaInicio>
 
     return Column(
       children: [
-        Icon(data, color: MiTema.azulMarino, size: 35),
+        Icon(data, color: MiTema.azulOscuro, size: 35),
         Text(txt),
       ],
     );

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:xd/theme/tema.dart';
+import 'package:buscadoc_mobile/theme/tema.dart';
 
 class UbicacionScreen extends StatefulWidget {
   const UbicacionScreen({super.key});
@@ -70,7 +70,7 @@ class _UbicacionScreenState extends State<UbicacionScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.location_on, size: 50, color: MiTema.azulMarino),
+              Icon(Icons.location_on, size: 50, color: MiTema.azulOscuro),
               const SizedBox(height: 20),
               
               Text(

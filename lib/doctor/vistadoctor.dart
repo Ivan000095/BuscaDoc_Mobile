@@ -6,13 +6,14 @@ import 'package:get/get.dart';
 // ignore: depend_on_referenced_packages
 import 'package:google_fonts/google_fonts.dart';
 // ignore: depend_on_referenced_packages
-import 'package:xd/controller/doctorcontroller.dart';
-import 'package:xd/model/doctores.dart';
-import 'package:xd/theme/tema.dart';
-import 'package:xd/utils/formatos.dart';
-import 'package:xd/model/comentarios.dart';
+import 'package:buscadoc_mobile/controller/doctorcontroller.dart';
+import 'package:buscadoc_mobile/model/doctores.dart';
+import 'package:buscadoc_mobile/theme/tema.dart';
+import 'package:buscadoc_mobile/utils/formatos.dart';
+import 'package:buscadoc_mobile/model/comentarios.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:xd/view/citas.dart';
+import 'package:buscadoc_mobile/doctor/citas.dart';
+
 
 // ignore: must_be_immutable
 class ProductDetailsView extends StatelessWidget {
@@ -35,10 +36,10 @@ class ProductDetailsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: MiTema.azulblanco,
+      backgroundColor: MiTema.negro,
       appBar: AppBar(
         title: Text(doctor.nombre, style: TextStyle(color: Colors.white)),
-        backgroundColor: MiTema.azulMarino,
+        backgroundColor: MiTema.azulOscuro,
       ),
       body: FutureBuilder<List<Doctores>>(
         future: _doctors(),
@@ -145,7 +146,7 @@ class ProductDetailsView extends StatelessWidget {
                   width: 50,
                   height: 5,
                   decoration: BoxDecoration(
-                    color: MiTema.azulhielo,
+                    color: MiTema.azulOscuro,
                     borderRadius: BorderRadius.circular(50),
                   ),
                 ),
@@ -185,7 +186,7 @@ class ProductDetailsView extends StatelessWidget {
 
   Widget _elementos(IconData icono, String contenido) {
     return ListTile(
-      leading: Icon(icono, color: MiTema.azulMarino),
+      leading: Icon(icono, color: MiTema.azulOscuro),
       title: Text(contenido),
     );
   }
@@ -310,7 +311,7 @@ class ProductDetailsView extends StatelessWidget {
                 const SizedBox(width: 8),
                 IconButton(
                   onPressed: () {},
-                  icon: Icon(Icons.send, color: MiTema.azulMarino),
+                  icon: Icon(Icons.send, color: MiTema.azulOscuro),
                 ),
               ],
             ),
@@ -342,7 +343,7 @@ class ProductDetailsView extends StatelessWidget {
       return Container(
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: MiTema.azulMarino,
+          color: MiTema.azulOscuro,
           borderRadius: BorderRadius.circular(50),
         ),
         child: Obx(

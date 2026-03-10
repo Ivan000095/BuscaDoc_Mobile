@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:xd/model/entrega.dart';
-import 'package:xd/theme/tema.dart';
-import 'package:xd/utils/formatos.dart';
+import 'package:buscadoc_mobile/model/entrega.dart';
+import 'package:buscadoc_mobile/theme/tema.dart';
+import 'package:buscadoc_mobile/utils/formatos.dart';
 
 class VistaEntrega extends StatefulWidget {
   const VistaEntrega({super.key, required this.title});
@@ -23,7 +23,7 @@ class VistaEntregaState extends State<VistaEntrega> {
       child: Scaffold(
         appBar: AppBar(
           title: Text('entrega #${entrega.numero}'),
-          backgroundColor: MiTema.azulMarino,
+          backgroundColor: MiTema.azulOscuro,
         ),
         body: Column(
           children: [
@@ -31,7 +31,7 @@ class VistaEntregaState extends State<VistaEntrega> {
               leading: Icon(Icons.add_a_photo_outlined),
               title: Text(Formatos.fecha(entrega.fecha)),
               subtitle: Text('putos'),
-              tileColor: MiTema.verdepetroleo,
+              tileColor: MiTema.gris,
             ),
             const SizedBox(height: 10),
             ListTile(
@@ -45,7 +45,7 @@ class VistaEntregaState extends State<VistaEntrega> {
                     fillColor: Colors.transparent,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(50),
-                      borderSide: BorderSide(color: MiTema.azulavanda),
+                      borderSide: BorderSide(color: MiTema.azulOscuro),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(30),
@@ -55,7 +55,7 @@ class VistaEntregaState extends State<VistaEntrega> {
                   readOnly: true,
                 ),
               ),
-              title: Icon(Icons.picture_as_pdf_rounded, color: MiTema.azulMarino,),
+              title: Icon(Icons.picture_as_pdf_rounded, color: MiTema.azulOscuro,),
             ),
           ],
         ),
@@ -73,7 +73,7 @@ class VistaEntregaState extends State<VistaEntrega> {
       leading: Icon(Icons.add_a_photo_outlined),
       title: Text(Formatos.fecha(entrega.fecha)),
       subtitle: Text('putos'),
-      tileColor: MiTema.verdepetroleo,
+      tileColor: MiTema.negro,
     );
   }
 }

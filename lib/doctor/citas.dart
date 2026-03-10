@@ -1,6 +1,6 @@
 import 'package:file_picker/file_picker.dart';
-import 'package:xd/model/doctores.dart';
-import 'package:xd/theme/tema.dart';
+import 'package:buscadoc_mobile/model/doctores.dart';
+import 'package:buscadoc_mobile/theme/tema.dart';
 import 'package:flutter/material.dart';
 
 class AgendarCitaPage extends StatelessWidget {
@@ -23,7 +23,7 @@ class AgendarCitaPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(doctor.nombre, style: TextStyle(color: Colors.white)),
-        backgroundColor: MiTema.azulMarino,
+        backgroundColor: MiTema.gris,
       ),
       backgroundColor: MiTema.blanco,
       body: SafeArea(
@@ -40,7 +40,7 @@ class AgendarCitaPage extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: MiTema.negro,
+                      color: MiTema.blanco,
                     ),
                   ),
                 ),
@@ -93,7 +93,7 @@ class AgendarCitaPage extends StatelessWidget {
                     prefixIcon: const Icon(Icons.attach_file), // Icono opcional
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(50), // Tu borde redondo
-                      borderSide: BorderSide(color: MiTema.azulavanda), // O el color que uses
+                      borderSide: BorderSide(color: MiTema.azulOscuro), // O el color que uses
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(50),
@@ -108,7 +108,7 @@ class AgendarCitaPage extends StatelessWidget {
                 Center(
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: MiTema.azulMarino,
+                      backgroundColor: MiTema.azulOscuro,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(50),
                       ),

@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:get/get.dart';
 
 class ProductController extends GetxController {
