@@ -1,6 +1,4 @@
 import 'package:buscadoc_mobile/doctor/inicio.dart';
-import 'package:buscadoc_mobile/doctor/vistadoctor.dart';
-import 'package:buscadoc_mobile/paciente/top5.dart';
 
 import 'package:flutter/material.dart';
 import 'package:buscadoc_mobile/theme/tema.dart';
@@ -67,7 +65,7 @@ class _InicioSesionState extends State<InicioSesion> {
               Container(
                 decoration: BoxDecoration(
                   color: MiTema.blanco,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(30),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.05),
@@ -109,7 +107,7 @@ class _InicioSesionState extends State<InicioSesion> {
                             filled: true,
                             fillColor: MiTema.gris,
                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(50),
                               borderSide: BorderSide.none,
                             ),
                             contentPadding: const EdgeInsets.symmetric(
@@ -140,7 +138,7 @@ class _InicioSesionState extends State<InicioSesion> {
                             filled: true,
                             fillColor: MiTema.gris,
                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(50),
                               borderSide: BorderSide.none,
                             ),
                             contentPadding: const EdgeInsets.symmetric(

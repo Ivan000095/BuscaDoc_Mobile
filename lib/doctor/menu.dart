@@ -1,7 +1,6 @@
 import 'package:buscadoc_mobile/paciente/agendacita.dart';
 import 'package:flutter/material.dart';
 import 'package:buscadoc_mobile/theme/tema.dart';
-import 'package:get/get.dart';
 
 Drawer menu(BuildContext context) {
   return Drawer(

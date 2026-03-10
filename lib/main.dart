@@ -1,9 +1,9 @@
-import 'package:buscadoc_mobile/doctor/vistaentrega.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:buscadoc_mobile/theme/tema.dart';
 import 'package:buscadoc_mobile/iniciosesion.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:get/get.dart';
 void main() {
   runApp(const MyApp());
 }
@@ -13,7 +13,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'BuscaDoc',
       theme: MiTema.temaApp(context),
@@ -38,9 +38,17 @@ class _PantallaInicioState extends State<PantallaInicio> {
     _controller = VideoPlayerController.asset('assets/logo.mp4')
       ..initialize().then((_) {
         setState(() {});
-        _controller.setLooping(true); // Para que se repita
-        _controller.play(); // Iniciar automáticamente
+        _controller.setLooping(true);
+        _controller.play();
       });
+
+    Future.delayed(const Duration(seconds: 0), () {
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const InicioSesion()),
+        );
+      }
+    });
   }
 
   @override
@@ -66,31 +74,7 @@ class _PantallaInicioState extends State<PantallaInicio> {
                       child: VideoPlayer(_controller),
                     ),
                   )
-                : const CircularProgressIndicator(), // Muestra carga mientras inicia
-
-            const SizedBox(height: 50),
-
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (context) => const InicioSesion()),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: MiTema.azulOscuro,
-                padding: const EdgeInsets.symmetric(horizontal: 60, vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
-              ),
-              child: Text(
-                'Inicio',
-                style: GoogleFonts.quicksand(
-                  color: MiTema.blanco, 
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20),
-              ),
-            ),
+                : const CircularProgressIndicator(),
           ],
         ),
       ),

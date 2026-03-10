@@ -1,182 +1,146 @@
-// ignore_for_file: prefer_const_constructors
-
 import 'package:flutter/material.dart';
-// ignore: depend_on_referenced_packages
 import 'package:get/get.dart';
-// ignore: depend_on_referenced_packages
 import 'package:google_fonts/google_fonts.dart';
-// ignore: depend_on_referenced_packages
-import 'package:buscadoc_mobile/controller/doctorcontroller.dart';
 import 'package:buscadoc_mobile/model/doctores.dart';
 import 'package:buscadoc_mobile/theme/tema.dart';
 import 'package:buscadoc_mobile/utils/formatos.dart';
-import 'package:buscadoc_mobile/model/comentarios.dart';
-import 'package:sqflite/sqflite.dart';
 import 'package:buscadoc_mobile/doctor/citas.dart';
 
-
-// ignore: must_be_immutable
-class ProductDetailsView extends StatelessWidget {
-  ProductDetailsView({super.key, required this.doctor});
-  final ProductController productController = Get.put(ProductController());
+class DoctorDetailsView extends StatelessWidget {
   final Doctores doctor;
-  late Database db;
+  
+  // Simulamos una lista de comentarios para el diseño
+  final List<Map<String, String>> comentariosMock = [
+    {"user": "Paciente 1", "texto": "Excelente atención, muy profesional."},
+    {"user": "Paciente 2", "texto": "Me gustó mucho cómo explicó el tratamiento."},
+  ];
 
-  // Future<List<Doctores>> doctores = Doctores.all(Database db);
-
-  List<Comentario> comentarios = Comentario.all();
-
-  final TextEditingController _controller = TextEditingController();
-
-  Future<List<Doctores>> _doctors() async {
-    Future<List<Doctores>> doctores = Doctores.all();
-    return doctores;
-  }
+  DoctorDetailsView({super.key, required this.doctor});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: MiTema.negro,
-      appBar: AppBar(
-        title: Text(doctor.nombre, style: TextStyle(color: Colors.white)),
-        backgroundColor: MiTema.azulOscuro,
-      ),
-      body: FutureBuilder<List<Doctores>>(
-        future: _doctors(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final doctores = snapshot.data!;
-          return _vista(context, doctores); // pásalos a tu vista
-        },
-      ),
-      bottomNavigationBar: _bottom(context),
-    );
-  }
-
-  Widget _vista(BuildContext context, doctores) {
-    return Column(
-      children: [
-        Container(
-          height: MediaQuery.of(context).size.height * .35,
-          padding: const EdgeInsets.only(bottom: 30, top: 20),
-          width: double.infinity,
-          child: CircleAvatar(
-            radius: 145,
-            backgroundImage: AssetImage(doctor.image),
-          ),
-        ),
-        Expanded(
-          child: Stack(
-            children: [
-              Container(
-                padding: const EdgeInsets.only(top: 40, right: 14, left: 14),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(30),
-                    topRight: Radius.circular(30),
-                  ),
-                ),
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            doctor.nombre,
-                            style: GoogleFonts.poppins(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          Text(
-                            '${Formatos.horario(doctor.horarioentrada)} - ${Formatos.horario(doctor.horariosalida)}',
-                            style: GoogleFonts.poppins(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 15),
-                      Text(
-                        doctor.descripcion,
-                        style: GoogleFonts.poppins(
-                          fontSize: 15,
-                          color: Colors.grey,
-                        ),
-                      ),
-                      const SizedBox(height: 15),
-                      _elementos(Icons.phone, doctor.telefono),
-                      _elementos(
-                        Icons.calendar_month,
-                        '${Formatos.fecha(doctor.fecha)} (${Formatos.edad(doctor.fecha)} años)',
-                      ),
-                      _elementos(Icons.translate, doctor.idioma),
-                      _elementos(Icons.house, doctor.direccion),
-                      _elementos(
-                        Icons.monetization_on_outlined,
-                        'costo de consulta ${doctor.costos}',
-                      ),
-                      const SizedBox(height: 15),
-                      Text(
-                        'Similares',
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      _similares(doctores),
-                      const SizedBox(height: 50),
-                      _comentarios(),
-                      const SizedBox(height: 30),
-                    ],
+      backgroundColor: Colors.white,
+      body: Stack(
+        children: [
+          CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                expandedHeight: 320,
+                pinned: true,
+                backgroundColor: MiTema.azulOscuro,
+                iconTheme: const IconThemeData(color: Colors.white),
+                flexibleSpace: FlexibleSpaceBar(
+                  background: Image.network(
+                    doctor.image,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => 
+                      Container(color: Colors.grey[300], child: const Icon(Icons.person, size: 100)),
                   ),
                 ),
               ),
-              Align(
-                alignment: Alignment.topCenter,
+
+              // const SizedBox(height: 18),
+
+              SliverToBoxAdapter(
                 child: Container(
-                  margin: const EdgeInsets.only(top: 10),
-                  width: 50,
-                  height: 5,
-                  decoration: BoxDecoration(
-                    color: MiTema.azulOscuro,
-                    borderRadius: BorderRadius.circular(50),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(30),
+                      topRight: Radius.circular(30),
+                    ),
+                  ),
+                  transform: Matrix4.translationValues(0, -10, 0),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                doctor.nombre,
+                                style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            _buildRating(doctor.promedio ?? 0),
+                          ],
+                        ),
+                        
+                        Text(
+                          doctor.especialidad,
+                          style: GoogleFonts.poppins(fontSize: 16, color: MiTema.azulOscuro, fontWeight: FontWeight.w500),
+                        ),
+
+                        const SizedBox(height: 25),
+
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            _iconDetail(Icons.location_on, "Ubicación"),
+                            _iconDetail(Icons.access_time, "Horarios"),
+                            _iconDetail(Icons.calendar_month, "Días"),
+                            _iconDetail(Icons.phone, "Teléfono"),
+                          ],
+                        ),
+
+                        const SizedBox(height: 30),
+
+                        Center(
+                          child: Wrap(
+                            spacing: 12,
+                            runSpacing: 12,
+                            alignment: WrapAlignment.center,
+                            children: [
+                              _actionPill("Solicitar cita"),
+                              _actionPill("Enviar mensaje"),
+                              _actionPill("Reseñar"),
+                              _actionPill("Reportar"),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 35),
+
+                        Text("Acerca del doctor", style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 10),
+                        Text(
+                          doctor.descripcion,
+                          style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey[700], height: 1.6),
+                        ),
+
+                        const SizedBox(height: 30),
+
+                        Text("Comentarios", style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 15),
+                        _buildCommentsList(),
+                        
+                        const SizedBox(height: 100),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ],
           ),
-        ),
-      ],
-    );
-  }
 
-  Widget _bottom(BuildContext context) {
-    return Container(
-      height: 70,
-      color: Colors.white,
-      padding: EdgeInsets.all(10),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          SizedBox(width: 20),
-          Expanded(
-            child: Builder(
-              builder: (innerContext) {
-                return InkWell(
-                  onTap: () {
-                    Get.to(() => AgendarCitaPage(doctor: doctor));
-                  },
-                  child: _boton(),
-                );
-              },
+          Positioned(
+            bottom: 20,
+            left: 20,
+            right: 20,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: MiTema.azulOscuro,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                elevation: 10,
+              ),
+              onPressed: () => Get.to(() => AgendarCitaPage(doctor: doctor)),
+              child: const Text("AGENDAR CONSULTA", 
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
             ),
           ),
         ],
@@ -184,188 +148,62 @@ class ProductDetailsView extends StatelessWidget {
     );
   }
 
-  Widget _elementos(IconData icono, String contenido) {
-    return ListTile(
-      leading: Icon(icono, color: MiTema.azulOscuro),
-      title: Text(contenido),
+  Widget _iconDetail(IconData icon, String label) {
+    return Column(
+      children: [
+        Icon(icon, color: MiTema.azulOscuro, size: 28),
+        const SizedBox(height: 4),
+        Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500)),
+      ],
     );
   }
 
-  Widget _similares(doctores) {
-    return SizedBox(
-      height: 120,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: doctores.length,
-        itemBuilder: (context, index) => Container(
-          margin: const EdgeInsets.only(
-            right: 20,
-            bottom: 5,
-            left: 10,
-            top: 10,
-          ),
-          width: 100,
-          decoration: BoxDecoration(
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2), // Color of the shadow
-                spreadRadius:
-                    3, // Extent to which the box is inflated before blur
-                blurRadius: 4, // Haziness of the shadow's edges
-                offset: Offset(0, 3), // Controls shadow's position (dx, dy)
-              ),
-            ],
-            color: MiTema.blanco,
-            borderRadius: BorderRadius.circular(5),
-          ),
-          child: Column(
-            children: <Widget>[
-              Image.asset(
-                doctores[index].image,
-                width: 70,
-                height: 65,
-              ), // Your image
-              Padding(
-                padding: const EdgeInsets.all(6.0),
-                child: Text(
-                  doctores[index].nombre, // Your subtitle text
-                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
-          ),
-        ),
+  Widget _actionPill(String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
+      decoration: BoxDecoration(
+        color: MiTema.azulOscuro,
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))],
       ),
+      child: Text(label, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
     );
   }
 
-  Widget _comentarios() {
-    return Card(
-      color: MiTema.blanco,
-      margin: const EdgeInsets.all(16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 4,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildRating(double promedio) {
+    return Row(
+      children: [
+        for (int i = 0; i < 5; i++)
+          Icon(
+            i < promedio.round() ? Icons.star : Icons.star_border,
+            color: MiTema.azulOscuro,
+            size: 20,
+          ),
+      ],
+    );
+  }
+
+  Widget _buildCommentsList() {
+    return Column(
+      children: comentariosMock.map((c) => Padding(
+        padding: const EdgeInsets.only(bottom: 15),
+        child: Row(
           children: [
-            const Text(
-              "Comentarios",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: comentarios.length,
-              itemBuilder: (context, index) {
-                final comentario = comentarios[index];
-                return Container(
-                  margin: const EdgeInsets.symmetric(vertical: 8),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      CircleAvatar(
-                        radius: 20,
-                        backgroundImage: AssetImage(comentario.foto),
-                        child: null,
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: MiTema.blanco,
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          child: Text(
-                            comentario.contenido,
-                            style: const TextStyle(fontSize: 14),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-            const Divider(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    decoration: InputDecoration(
-                      hintText: "Escribe un comentario...",
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
+            const CircleAvatar(backgroundImage: NetworkImage('https://via.placeholder.com/150')),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                const SizedBox(width: 8),
-                IconButton(
-                  onPressed: () {},
-                  icon: Icon(Icons.send, color: MiTema.azulOscuro),
-                ),
-              ],
+                child: Text(c["texto"]!, style: const TextStyle(fontSize: 13)),
+              ),
             ),
           ],
         ),
-      ),
+      )).toList(),
     );
-  }
-
-  Widget _boton() {
-    if (Formatos.compararhoras(doctor.horarioentrada, doctor.horariosalida) ==
-        false) {
-      return Container(
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: Colors.grey,
-          borderRadius: BorderRadius.circular(50),
-        ),
-        child: Text(
-          'No disponible',
-          style: GoogleFonts.poppins(
-            fontSize: 15,
-            fontWeight: FontWeight.w500,
-            color: Colors.white,
-          ),
-        ),
-      );
-    } else {
-      return Container(
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: MiTema.azulOscuro,
-          borderRadius: BorderRadius.circular(50),
-        ),
-        child: Obx(
-          () => productController.isAddLoading.value
-              ? SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                    strokeWidth: 3,
-                  ),
-                )
-              : Text(
-                  'Cita',
-                  style: GoogleFonts.poppins(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white,
-                  ),
-                ),
-        ),
-      );
-    }
   }
 }
