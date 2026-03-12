@@ -2,6 +2,7 @@
 
 import 'dart:convert' as convert;
 import 'package:http/http.dart' as http;
+import 'package:buscadoc_mobile/model/comentarios.dart';
 
 class Doctores {
   int id;
@@ -17,6 +18,7 @@ class Doctores {
   int horariosalida;
   num costos;
   double? promedio;
+  final List<Comentario> comentarios;
 
   Doctores({
     required this.id,
@@ -32,6 +34,7 @@ class Doctores {
     required this.cedula,
     required this.costos,
     required this.promedio,
+    required this.comentarios,
   });
 
   static Future<List<Doctores>> all() async {
@@ -55,7 +58,11 @@ class Doctores {
 
         for (var element in listado) {
           String costoString = element['costos']?.toString().replaceAll('\$', '').replaceAll(',', '') ?? '0';
-
+          List rawComentarios = element['comentarios'] ?? [];
+          print(rawComentarios);
+          List<Comentario> listaComentarios = rawComentarios
+              .map((c) => Comentario.fromJson(c as Map<String, dynamic>))
+              .toList();
           doctores.add(
             Doctores(
               id: element['id'] ?? 0,
@@ -75,6 +82,7 @@ class Doctores {
               cedula: element['cedula']?.toString() ?? '',
               costos: num.tryParse(costoString) ?? 0,
               promedio: element['promedio'] != null ? element['promedio'].toDouble() : 0.0,
+              comentarios: listaComentarios,
             ),
           );
         }

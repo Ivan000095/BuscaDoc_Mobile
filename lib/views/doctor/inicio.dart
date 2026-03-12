@@ -1,6 +1,6 @@
 // ignore_for_file: depend_on_referenced_packages
 
-import 'package:buscadoc_mobile/doctor/vistaentrega.dart';
+import 'package:buscadoc_mobile/views/doctor/vistaentrega.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_floating_bottom_bar/flutter_floating_bottom_bar.dart';
 import 'package:sqflite/sqflite.dart';
@@ -9,10 +9,10 @@ import 'package:buscadoc_mobile/theme/tema.dart';
 import 'package:buscadoc_mobile/model/doctores.dart';
 import 'package:buscadoc_mobile/model/entrega.dart';
 import 'package:buscadoc_mobile/utils/formatos.dart';
-import 'package:buscadoc_mobile/doctor/mapa.dart';
-import 'package:buscadoc_mobile/doctor/menu.dart';
+import 'package:buscadoc_mobile/views/doctor/mapa.dart';
+import 'package:buscadoc_mobile/views/doctor/menu.dart';
 import 'package:get/get.dart';
-import 'package:buscadoc_mobile/doctor/vistadoctor.dart';
+import 'package:buscadoc_mobile/views/doctor/vistadoctor.dart';
 
 class VistaInicio extends StatefulWidget {
   const VistaInicio({super.key, required this.title});
@@ -25,6 +25,7 @@ class VistaInicio extends StatefulWidget {
 
 class _VistaInicioState extends State<VistaInicio>
     with SingleTickerProviderStateMixin {
+      
   Widget _tabItem({required IconData icon, required int index}) {
     return GestureDetector(
       onTap: () {

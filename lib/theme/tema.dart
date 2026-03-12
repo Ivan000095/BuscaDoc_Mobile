@@ -5,6 +5,8 @@ class MiTema {
   static Color azulOscuro = const Color(0xFF00213D);
   static Color blanco = const Color(0xFFFFFFFF);
   static Color negro = const Color(0xFF000000);
+  static Color rojoerror = const Color.fromARGB(255, 255, 0, 0);
+  static Color verde = const Color.fromARGB(255, 25, 135, 84);
   static Color azul = const Color.fromARGB(106, 14, 64, 109);
 
   static ThemeData temaApp(BuildContext context) {
@@ -19,7 +21,7 @@ class MiTema {
 
   static ColorScheme _esquemaColores(BuildContext context) {
     return ColorScheme(
-        brightness: Brightness.light, // Ajustado para evitar parpadeos
+        brightness: Brightness.light,
         primary: azulOscuro,
         onPrimary: blanco,
         secondary: blanco,

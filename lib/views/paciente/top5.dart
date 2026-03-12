@@ -1,6 +1,6 @@
-import 'package:buscadoc_mobile/paciente/doctor.dart';
-import 'package:buscadoc_mobile/paciente/farmacia.dart';
-import 'package:buscadoc_mobile/paciente/menu.dart';
+import 'package:buscadoc_mobile/views/paciente/doctor.dart';
+import 'package:buscadoc_mobile/views/paciente/farmacia.dart';
+import 'package:buscadoc_mobile/views/paciente/menu.dart';
 import 'package:buscadoc_mobile/theme/tema.dart';
 import 'package:flutter/material.dart';
 

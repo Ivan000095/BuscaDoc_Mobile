@@ -1,44 +1,108 @@
-import 'package:sqflite/sqflite.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'dart:io' show Platform;
 
 class Usuario {
-  int id;
-  String correo;
-  String pass;
+  final int id;
+  final String nombre;
+  final String email;
+  final String rol;
+  final String? token;
 
   Usuario({
     required this.id,
-    required this.correo,
-    required this.pass,
+    required this.nombre,
+    required this.email,
+    required this.rol,
+    this.token,
   });
 
-  static Future<bool> valida(Database db, String m, String p) async {
-    List resultado = await db.query("usuarios", where: "correo = ? AND pass = ?", whereArgs: [m, p]);
-    
-    if (resultado.isNotEmpty) {
-      return true;
+  static Future<Map<String, dynamic>> registrar(Map<String, dynamic> datosRegistro) async {
+    try {
+      var url = Uri.parse('http://127.0.0.1:8000/api/auth/register');
+      var response = await http.post(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
+        body: jsonEncode(datosRegistro),
+      );
+
+      var jsonResponse = jsonDecode(response.body);
+
+      if (response.statusCode == 201) {
+        print(jsonResponse);
+        return {
+          'success': true,
+          'token': jsonResponse['data']['token'],
+          'user': jsonResponse['data']['user'],
+        };
+      } else {
+        print(jsonResponse['message']);
+        return {
+          'success': false,
+          'message': jsonResponse['message'] ?? 'Error desconocido al registrar.',
+          'errores': jsonResponse['errors']
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Error de conexión con el servidor. Revisa tu internet.',
+      };
     }
-    return false;
   }
 
-  // static Future<bool<Valida>> all() async {
-  //   try {
-  //     var url = Uri.http('10.0.2.2:8000', '/api/auth/login');
-      
-  //     var response = await http.get(url, headers: {"Accept": "application/json"});
+  static Future<Map<String, dynamic>> login(String email, String password) async {
+    try {
+      var url = Uri.parse('http://127.0.0.1:8000/api/auth/login'); 
+      String deviceName = "MobileApp_Unknown";
+      try {
+        deviceName = Platform.isAndroid ? "Android_Device" : "iOS_Device";
+      } catch (e) {
+        // Ignorar si falla la detección de plataforma
+      }
 
-  //     if (response.statusCode == 200) {
-  //       var jsonResponse = convert.jsonDecode(response.body) as Map<String, dynamic>;
+      var response = await http.post(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
+        body: jsonEncode({
+          "email": email,
+          "password": password,
+          "device_name": deviceName,
+        }),
+      );
+
+      var jsonResponse = jsonDecode(response.body);
+      if (response.statusCode == 200 && jsonResponse['success'] == true) {
+        return {
+          'success': true,
+          'token': jsonResponse['data']['token'],
+          'user': jsonResponse['data']['user'], 
+        };
+      } else {
+        String errorMsg = "Credenciales incorrectas";
         
-  //       if (jsonResponse['Respuesta'] == 'Bienvenido') {
-  //         MyApp.token = jsonResponse['datos']['token'];
-  //       }
-  //       return true;
-  //     } else {
-  //       print('❌ Error del servidor: ${response.statusCode}');
-  //     }
-  //   } catch (e) {
-  //     print('🔴 ERROR DE CONEXIÓN: $e');
-  //   }
-  //   return [];
-  // }
+        if (jsonResponse['errors'] != null && jsonResponse['errors']['email'] != null) {
+          errorMsg = jsonResponse['errors']['email'][0];
+        } else if (jsonResponse['message'] != null) {
+          errorMsg = jsonResponse['message'];
+        }
+        return {
+          'success': false,
+          'message': errorMsg,
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Error de conexión. Revisa que el servidor esté encendido.',
+      };
+    }
+  }
+
 }
