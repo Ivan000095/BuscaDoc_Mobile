@@ -1,8 +1,10 @@
-import 'package:buscadoc_mobile/doctor/inicio.dart';
+import 'package:buscadoc_mobile/home.dart';
 
 import 'package:flutter/material.dart';
 import 'package:buscadoc_mobile/theme/tema.dart';
 import 'registro.dart';
+import 'package:buscadoc_mobile/model/usuarios.dart';
+import 'package:buscadoc_mobile/utils/ui.dart';
 
 
 class InicioSesion extends StatefulWidget {
@@ -15,12 +17,56 @@ class InicioSesion extends StatefulWidget {
 class _InicioSesionState extends State<InicioSesion> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _estaCargando = false;
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _valida() async {
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      UIUtils.showRoundedSnackBar(context, 'Por favor llena todos los campos', MiTema.rojoerror, Colors.white, icono: Icons.warning);
+      return;
+    }
+
+    setState(() => _estaCargando = true);
+
+    var respuesta = await Usuario.login(
+      _emailController.text.trim(), 
+      _passwordController.text
+    );
+
+    setState(() => _estaCargando = false);
+
+    if (respuesta['success']) {
+      print("Token recibido: ${respuesta['token']}");
+      final userData = respuesta['user'];
+      final String userRole = userData['role'];
+      final String userName = userData['name'];
+      final String userFoto = userData['foto'];
+
+      if (mounted) {
+        UIUtils.showRoundedSnackBar(context, '¡Inición sesiada!', MiTema.verde, Colors.white, icono: Icons.check_circle);
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => VistaInicio(
+              title: "BuscaDoc",
+              role: userRole,
+              userName: userName,
+              userFoto: userFoto
+            ),
+          ),
+        );
+      }
+    } else {
+      if (mounted) {
+        UIUtils.showRoundedSnackBar(context, respuesta['message'], MiTema.rojoerror, Colors.white, icono: Icons.warning);
+      }
+    }
   }
 
   @override
@@ -43,7 +89,6 @@ class _InicioSesionState extends State<InicioSesion> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 80),
-              // Logo
               Image.asset(
                 'assets/logon.png',
                 width: 200,
@@ -150,34 +195,34 @@ class _InicioSesionState extends State<InicioSesion> {
                       ],
                     ),
                     const SizedBox(height: 24),
-                    // Botón de iniciar sesión
                     ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const VistaInicio(title: "BuscaDoc"),
-                          ),
-                        );
-                      },
+                      onPressed: _estaCargando ? null : _valida,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: MiTema.azulOscuro,
-                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        disabledBackgroundColor: MiTema.azulOscuro.withOpacity(0.7),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(40),
                         ),
                       ),
-                      child: Text(
-                        'Iniciar sesión',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: MiTema.blanco,
-                        ),
-                      ),
+                      child: _estaCargando
+                          ? const SizedBox(
+                              height: 20, 
+                              width: 20,
+                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
+                            )
+                          : Text(
+                              'Iniciar sesión',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: MiTema.blanco,
+                              ),
+                            ),
                     ),
+
                     const SizedBox(height: 24),
-                    // Divisor con texto
+
                     Row(
                       children: [
                         Expanded(

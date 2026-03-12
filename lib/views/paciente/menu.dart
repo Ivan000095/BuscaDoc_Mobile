@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:buscadoc_mobile/theme/tema.dart';
 import 'perfil.dart';
-import '../main.dart'; // Asegúrate de importar tu archivo principal
+import 'package:buscadoc_mobile/main.dart';
 
 class MenuLateral extends StatelessWidget {
   const MenuLateral({super.key});

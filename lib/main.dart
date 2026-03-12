@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:buscadoc_mobile/theme/tema.dart';
 import 'package:buscadoc_mobile/iniciosesion.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:get/get.dart';
+
+
 void main() {
   runApp(const MyApp());
 }
@@ -40,9 +41,10 @@ class _PantallaInicioState extends State<PantallaInicio> {
         setState(() {});
         _controller.setLooping(true);
         _controller.play();
+        _controller.setPlaybackSpeed(2.5);
       });
 
-    Future.delayed(const Duration(seconds: 0), () {
+    Future.delayed(const Duration(seconds: 2), () {
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const InicioSesion()),

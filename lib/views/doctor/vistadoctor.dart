@@ -3,8 +3,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:buscadoc_mobile/model/doctores.dart';
 import 'package:buscadoc_mobile/theme/tema.dart';
-import 'package:buscadoc_mobile/utils/formatos.dart';
-import 'package:buscadoc_mobile/doctor/citas.dart';
+import 'package:buscadoc_mobile/views/doctor/citas.dart';
 
 class DoctorDetailsView extends StatelessWidget {
   final Doctores doctor;
@@ -39,8 +38,6 @@ class DoctorDetailsView extends StatelessWidget {
                   ),
                 ),
               ),
-
-              // const SizedBox(height: 18),
 
               SliverToBoxAdapter(
                 child: Container(
@@ -119,6 +116,10 @@ class DoctorDetailsView extends StatelessWidget {
                         _buildCommentsList(),
                         
                         const SizedBox(height: 100),
+
+                        Text("Mapa del doctor", style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 15),
+                        _buildMap(doctor),
                       ],
                     ),
                   ),
@@ -158,6 +159,7 @@ class DoctorDetailsView extends StatelessWidget {
     );
   }
 
+
   Widget _actionPill(String label) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
@@ -184,26 +186,86 @@ class DoctorDetailsView extends StatelessWidget {
   }
 
   Widget _buildCommentsList() {
+    if (doctor.comentarios.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        child: Text(
+          "${doctor.nombre} aún no tiene reseñas.",
+          style: TextStyle(color: Colors.grey[600], fontStyle: FontStyle.italic),
+        ),
+      );
+    }
+
     return Column(
-      children: comentariosMock.map((c) => Padding(
+      children: doctor.comentarios.map((comentario) => Padding(
         padding: const EdgeInsets.only(bottom: 15),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const CircleAvatar(backgroundImage: NetworkImage('https://via.placeholder.com/150')),
+            CircleAvatar(
+              backgroundColor: MiTema.azulOscuro,
+              backgroundImage: comentario.foto != null && comentario.foto!.isNotEmpty
+                  ? NetworkImage(comentario.foto!)
+                  : null,
+              child: comentario.foto == null || comentario.foto!.isEmpty
+                  ? Text(
+                      comentario.autor.substring(0, 1).toUpperCase(),
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    )
+                  : null,
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.grey[100],
                   borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.grey.shade200),
                 ),
-                child: Text(c["texto"]!, style: const TextStyle(fontSize: 13)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          comentario.autor,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
+                        Row(
+                          children: [
+                            for (int i = 0; i < 5; i++)
+                              Icon(
+                                i < comentario.calificacion.round() ? Icons.star : Icons.star_border,
+                                color: MiTema.azulOscuro,
+                                size: 14,
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      comentario.contenido, 
+                      style: TextStyle(fontSize: 13, color: Colors.grey[800]),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      comentario.fecha,
+                      style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
         ),
       )).toList(),
     );
+  }
+  
+  Widget _buildMap(Doctores doctor) {
+    return Text('pene');
   }
 }

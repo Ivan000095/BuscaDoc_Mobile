@@ -1,4 +1,4 @@
-import 'package:buscadoc_mobile/paciente/agendacita.dart';
+import 'package:buscadoc_mobile/views/paciente/agendacita.dart';
 import 'package:flutter/material.dart';
 import 'package:buscadoc_mobile/theme/tema.dart';
 
