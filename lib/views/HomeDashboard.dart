@@ -96,7 +96,6 @@ class _HomeDashboardState extends State<HomeDashboard> {
           _buildSectionTitle("Matriz de ubicaciones"),
           const SizedBox(height: 10),
           
-          // El mapa que tienes en la web
           Container(
             height: 250,
             decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), color: Colors.white),
