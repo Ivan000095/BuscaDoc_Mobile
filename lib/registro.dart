@@ -3,7 +3,7 @@ import 'package:buscadoc_mobile/iniciosesion.dart';
 import 'package:buscadoc_mobile/theme/tema.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:buscadoc_mobile/model/usuarios.dart';
+import 'package:buscadoc_mobile/model/usuario.dart';
 
 class Registro extends StatefulWidget {
   const Registro({Key? key}) : super(key: key);

@@ -3,7 +3,7 @@ import 'package:buscadoc_mobile/home.dart';
 import 'package:flutter/material.dart';
 import 'package:buscadoc_mobile/theme/tema.dart';
 import 'registro.dart';
-import 'package:buscadoc_mobile/model/usuarios.dart';
+import 'package:buscadoc_mobile/model/usuario.dart';
 import 'package:buscadoc_mobile/utils/ui.dart';
 
 
@@ -47,6 +47,7 @@ class _InicioSesionState extends State<InicioSesion> {
       final String userRole = userData['role'];
       final String userName = userData['name'];
       final String userFoto = userData['foto'];
+      final String userEmail = userData['email'];
 
       if (mounted) {
         UIUtils.showRoundedSnackBar(context, '¡Inición sesiada!', MiTema.verde, Colors.white, icono: Icons.check_circle);
@@ -57,7 +58,8 @@ class _InicioSesionState extends State<InicioSesion> {
               title: "BuscaDoc",
               role: userRole,
               userName: userName,
-              userFoto: userFoto
+              userFoto: userFoto,
+              userEmail: userEmail
             ),
           ),
         );

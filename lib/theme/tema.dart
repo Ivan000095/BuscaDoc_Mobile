@@ -15,7 +15,7 @@ class MiTema {
         colorScheme: _esquemaColores(context),
         appBarTheme: _temaAppBar(),
         scaffoldBackgroundColor: gris,
-        useMaterial3: true, // Recomendado para versiones modernas
+        useMaterial3: true,
     );
   }
 

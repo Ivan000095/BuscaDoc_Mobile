@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:buscadoc_mobile/theme/tema.dart';
 import 'perfil.dart';
 import 'package:buscadoc_mobile/main.dart';
+import 'package:buscadoc_mobile/model/usuario.dart';
 
 class MenuLateral extends StatelessWidget {
   const MenuLateral({super.key});
@@ -36,16 +37,14 @@ class MenuLateral extends StatelessWidget {
               onTap: () => Navigator.pop(context),
             ),
             
-            // OPCIÓN ACTUALIZADA: Cerrar Sesión
             _buildMenuItem(
               icon: Icons.door_front_door_sharp, 
               title: 'Cerrar sesión', 
               onTap: () {
-                // Navigator.pushAndRemoveUntil elimina todas las rutas anteriores
                 Navigator.pushAndRemoveUntil(
                   context,
-                  MaterialPageRoute(builder: (context) => const MyApp()), // MyApp es tu clase en main.dart
-                  (Route<dynamic> route) => false, // Esto hace que no se pueda regresar
+                  MaterialPageRoute(builder: (context) => const MyApp()),
+                  (Route<dynamic> route) => false,
                 );
               },
             ),
@@ -55,7 +54,6 @@ class MenuLateral extends StatelessWidget {
     );
   }
 
-  // ... (Tus métodos _buildHeader y _buildMenuItem se mantienen iguales)
   Widget _buildHeader() {
     return Padding(
       padding: const EdgeInsets.only(top: 60, left: 25, right: 20),

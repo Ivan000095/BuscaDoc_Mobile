@@ -8,7 +8,6 @@ import 'package:buscadoc_mobile/model/db.dart';
 import 'package:buscadoc_mobile/theme/tema.dart';
 import 'package:buscadoc_mobile/model/doctores.dart';
 import 'package:buscadoc_mobile/model/entrega.dart';
-import 'package:buscadoc_mobile/views/doctor/menu.dart';
 import 'package:buscadoc_mobile/views/HomeDashboard.dart';
 import 'package:buscadoc_mobile/views/farmacia/lista_farmacias.dart';
 import 'package:buscadoc_mobile/views/doctor/lista_doctores.dart';
@@ -24,13 +23,15 @@ class VistaInicio extends StatefulWidget {
   final String role;
   final String userName;
   final String userFoto;
+  final String userEmail;
 
   const VistaInicio({
     super.key,
     required this.title,
     required this.role,
     required this.userName,
-    required this.userFoto
+    required this.userFoto,
+    required this.userEmail
     });
 
   @override
@@ -65,11 +66,20 @@ class _VistaInicioState extends State<VistaInicio>
 
   bool cargandoDoctores = true;
 
+  late int tabs;
+
   @override
   void initState() {
     super.initState();
     currentPage = 0;
-    tabController = TabController(length: 5, vsync: this);
+
+    if (widget.role == 'paciente') {
+      tabs = 5;
+    } else {
+      tabs = 2;
+    }
+
+    tabController = TabController(length: tabs, vsync: this);
 
     tabController.animation!.addListener(() {
       final value = tabController.animation!.value.round();
@@ -113,7 +123,7 @@ class _VistaInicioState extends State<VistaInicio>
     return SafeArea(
       child: Scaffold(
         appBar: UIUtils.appbar(title: 'Buscamots', fotoUrl: urlFinal),
-        drawer: menu(context),
+        drawer: UIUtils.buildMenuLateral(context, userName: widget.userName, role: widget.role, fotoUrl: widget.userFoto, userEmail: widget.userEmail),
         body: _bottom(),
       ),
     );
@@ -149,17 +159,13 @@ class _VistaInicioState extends State<VistaInicio>
       respectSafeArea: true,
       onBottomBarHidden: () {},
       onBottomBarShown: () {},
+
       body: (context, controller) => TabBarView(
         controller: tabController,
         physics: const BouncingScrollPhysics(),
-        children: [
-          HomeDashboard(role: widget.role, userName: widget.userName),
-          ListaDoctoresView(doctores: doctores, cargando: cargandoDoctores),
-          const ListaFarmaciasView(),
-          const Center(child: Text('Mis Citas / Entregas')),
-          const Center(child: Text('Configuración')),
-        ],
+        children: _getViewsByRole()
       ),
+      
       child: TabBar(
         controller: tabController,
         indicator: UnderlineTabIndicator(
@@ -168,16 +174,37 @@ class _VistaInicioState extends State<VistaInicio>
         ),
         indicatorColor: Colors.transparent,
         dividerColor: Colors.transparent,
-        tabs: [
-          _tabItem(icon: Icons.home, index: 0),
-          _tabItem(icon: Icons.medical_services, index: 1),
-          _tabItem(icon: Icons.local_pharmacy, index: 2),
-          _tabItem(icon: Icons.calendar_month, index: 3),
-          _tabItem(icon: Icons.settings, index: 4),
-        ],
+        tabs: _getIconsByRole(),
       ),
     );
   }
+
+  List<Widget> _getViewsByRole() {
+    List<Widget> views = [HomeDashboard(role: widget.role, userName: widget.userName)];
+    if (widget.role == 'paciente') {
+      views.add(ListaDoctoresView(doctores: doctores, cargando: cargandoDoctores));
+      views.add(const ListaFarmaciasView());
+      views.add(const Center(child: Text('Mis Citas / Pedidos')));
+    } else {
+      views.add(const Center(child: Text('Mi Agenda / Consultas')));
+    }
+    return views;
+  }
+
+  List<Widget> _getIconsByRole() {
+    List<Widget> tabs = [_tabItem(icon: Icons.home, index: 0)];
+    int currentIndex = 1;
+    
+    if (widget.role == 'paciente') {
+      tabs.add(_tabItem(icon: Icons.medical_services, index: currentIndex++));
+      tabs.add(_tabItem(icon: Icons.local_pharmacy, index: currentIndex++));
+      tabs.add(_tabItem(icon: Icons.calendar_month, index: currentIndex++));
+    } else {
+      tabs.add(_tabItem(icon: Icons.assignment, index: currentIndex++));
+    }
+    return tabs;
+  }
+
 }
 //   Widget _pagina1() {
 
