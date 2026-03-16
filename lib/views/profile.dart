@@ -7,6 +7,8 @@ import 'package:intl/intl.dart';
 import 'package:day_night_time_picker/day_night_time_picker.dart';
 import 'package:buscadoc_mobile/model/especialidad.dart';
 import 'package:buscadoc_mobile/utils/global.dart';
+import 'package:buscadoc_mobile/utils/ui.dart';
+import 'package:buscadoc_mobile/iniciosesion.dart';
 
 class EditarPerfil extends StatefulWidget {
   final String nombreActual;
@@ -105,26 +107,18 @@ class _EditarPerfilState extends State<EditarPerfil> {
           } else if (_datosPerfil?['role'] == 'doctor') {
             _especialidadActual = _datosPerfil?['especialidad'] ?? ''; 
             
-            // 🔥 1. BÚSQUEDA A PRUEBA DE BALAS 🔥
             if (_especialidadActual.isNotEmpty && _especialidades.isNotEmpty) {
-              // Si Laravel mandó varias separadas por coma, tomamos solo la primera
               String nombreABuscar = _especialidadActual.split(',').first.trim().toLowerCase();
-
               try {
-                // Buscamos ignorando mayúsculas y espacios
                 final espEncontrada = _especialidades.firstWhere(
                   (esp) => esp.nombre.trim().toLowerCase() == nombreABuscar
                 );
                 _espIdSeleccionada = espEncontrada.id;
               } catch (e) {
-                // Si de plano no existe, lo dejamos nulo
                 _espIdSeleccionada = null;
               }
             }
 
-            // 🔥 2. EL SALVAVIDAS DEL DROPDOWN 🔥
-            // Verificamos que el ID seleccionado REALMENTE exista en la lista actual.
-            // Si no existe, lo volvemos nulo para evitar que el menú se trabe.
             if (_espIdSeleccionada != null) {
               bool idExiste = _especialidades.any((esp) => esp.id == _espIdSeleccionada);
               if (!idExiste) {
@@ -288,6 +282,82 @@ class _EditarPerfilState extends State<EditarPerfil> {
           ),
         );
       }
+    }
+  }
+
+  Future<void> _confirmarEliminacion() async {
+    bool? confirmar = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: MiTema.rojoerror, size: 28),
+              const SizedBox(width: 10),
+              const Text("¿Eliminar Cuenta?", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+            ],
+          ),
+          content: const Text(
+            "Esta acción es irreversible. Perderás todo tu historial, comentarios y datos registrados. ¿Estás absolutamente seguro?",
+            style: TextStyle(fontSize: 14),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text("Cancelar", style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.bold)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: MiTema.rojoerror,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+              ),
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text("Sí, eliminar", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmar != true) return;
+
+    setState(() => _guardando = true);
+
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? token = prefs.getString('token');
+    String? idString = prefs.getString('id');
+
+    if (token != null && idString != null) {
+      int myId = int.parse(idString);
+      
+      var response = await Usuario.deleteAccount(token, myId);
+
+      setState(() => _guardando = false);
+
+      if (mounted) {
+        if (response['success']) {
+          await prefs.clear(); 
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(response['message']),
+              backgroundColor: MiTema.verde,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+            ),
+          );
+          Navigator.pushAndRemoveUntil(
+            context, 
+            MaterialPageRoute(builder: (context) => const InicioSesion()), 
+            (route) => false,
+          );
+        } else {
+          UIUtils.showRoundedSnackBar(context, response['message'], MiTema.rojoerror, MiTema.blanco);
+        }
+      }
+    } else {
+      setState(() => _guardando = false);
     }
   }
 
@@ -564,6 +634,38 @@ class _EditarPerfilState extends State<EditarPerfil> {
                         ),
                 ),
               ),
+
+              const SizedBox(height: 20),
+
+              SizedBox(
+                width: double.infinity,
+                height: 55,
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: MiTema.rojoerror, width: 2),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(50),
+                    ),
+                  ),
+                  onPressed: _guardando ? null : _confirmarEliminacion, 
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.delete_forever, color: MiTema.rojoerror),
+                      const SizedBox(width: 8),
+                      Text(
+                        "Eliminar mi cuenta",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: MiTema.rojoerror,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 40),
             ],
           ),
         ),
