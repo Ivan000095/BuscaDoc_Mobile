@@ -3,7 +3,7 @@ import 'package:buscadoc_mobile/theme/tema.dart';
 import 'menu.dart';
 import 'top5.dart'; 
 import 'agendacita.dart'; 
-import 'farmacia.dart'; // 1. IMPORTACIÓN AGREGADA
+import 'farmacia.dart';
 
 class Doctor extends StatefulWidget {
   const Doctor({Key? key}) : super(key: key);

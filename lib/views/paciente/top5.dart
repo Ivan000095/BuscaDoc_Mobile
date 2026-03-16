@@ -13,36 +13,11 @@ class Top5 extends StatefulWidget {
 }
 
 class _Top5State extends State<Top5> {
-  // El índice 0 corresponde al Home (Top 5)
   int _selectedIndex = 0;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBody: true,
-      // 1. SE AGREGA EL DRAWER AL SCAFFOLD
-      drawer: const MenuLateral(),
-      appBar: AppBar(
-        backgroundColor: MiTema.azulOscuro,
-        elevation: 0,
-        // 2. BUILDER PARA ABRIR EL DRAWER CORRECTAMENTE
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu, color: Colors.white),
-            onPressed: () {
-              Scaffold.of(context).openDrawer();
-            },
-          ),
-        ),
-        title: const Text(
-          'Top 5 mejores',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        centerTitle: true,
-      ),
       backgroundColor: const Color(0xFFF5F7FA),
       body: Stack(
         children: [
@@ -69,8 +44,8 @@ class _Top5State extends State<Top5> {
                 ),
                 const SizedBox(height: 30),
                 
-                // --- TARJETAS CON NAVEGACIÓN ---
-                _buildModernCard('Dr. Juan Carlos P. Gomez', 'Cardiólogo', 'assets/doctor1.jpg', true, () {
+               
+                _buildModernCard('Dr. Juan Carlos P. Gomez', 'Cardiólogo', 'assets/doctor1.png', true, () {
                   Navigator.push(context, MaterialPageRoute(builder: (context) => const Doctor()));
                 }),
                 const SizedBox(height: 16),
@@ -89,72 +64,12 @@ class _Top5State extends State<Top5> {
             ),
           ),
 
-          // --- BARRA DE NAVEGACIÓN ESTILO DOCTOR ---
-          _buildBottomNavBar(),
+          
         ],
       ),
     );
   }
 
-  // MÉTODO PARA LA BARRA DE NAVEGACIÓN (IGUAL A DOCTOR/FARMACIA)
-  Widget _buildBottomNavBar() {
-    return Positioned(
-      bottom: 30,
-      left: 50,
-      right: 50,
-      child: Container(
-        height: 65,
-        decoration: BoxDecoration(
-          color: MiTema.azulOscuro,
-          borderRadius: BorderRadius.circular(40),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.3),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            // Home (Seleccionado en esta pantalla)
-            IconButton(
-              icon: Icon(Icons.home_rounded, 
-                  color: _selectedIndex == 0 ? Colors.cyanAccent : Colors.white, 
-                  size: _selectedIndex == 0 ? 32 : 28),
-              onPressed: () => setState(() => _selectedIndex = 0),
-            ),
-            // Salud (Doctor)
-            IconButton(
-              icon: Icon(Icons.health_and_safety_rounded, 
-                  color: Colors.white, 
-                  size: _selectedIndex == 1 ? 32 : 28),
-              onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const Doctor()));
-              },
-            ),
-            // Medicina (Farmacia)
-            IconButton(
-              icon: Icon(Icons.medication_rounded, 
-                  color: Colors.white, 
-                  size: _selectedIndex == 2 ? 32 : 28),
-              onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const Farmacia()));
-              },
-            ),
-            // Búsqueda
-            IconButton(
-              icon: Icon(Icons.search, 
-                  color: Colors.white, 
-                  size: _selectedIndex == 3 ? 32 : 28),
-              onPressed: () => setState(() => _selectedIndex = 3),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _buildModernCard(String title, String subtitle, String imagePath, bool isDoctor, VoidCallback onTap) {
     return GestureDetector(

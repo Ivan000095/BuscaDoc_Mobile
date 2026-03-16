@@ -1,6 +1,7 @@
 // ignore_for_file: depend_on_referenced_packages
 
 import 'package:buscadoc_mobile/utils/ui.dart';
+import 'package:buscadoc_mobile/views/paciente/top5.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_floating_bottom_bar/flutter_floating_bottom_bar.dart';
 import 'package:sqflite/sqflite.dart';
@@ -11,6 +12,7 @@ import 'package:buscadoc_mobile/model/entrega.dart';
 import 'package:buscadoc_mobile/views/HomeDashboard.dart';
 import 'package:buscadoc_mobile/views/farmacia/lista_farmacias.dart';
 import 'package:buscadoc_mobile/views/doctor/lista_doctores.dart';
+import 'package:buscadoc_mobile/views/paciente/top5.dart';
 // import 'package:get/get.dart';
 // import 'package:buscadoc_mobile/views/doctor/vistadoctor.dart';
 // import 'package:buscadoc_mobile/views/doctor/mapa.dart';
@@ -74,7 +76,7 @@ class _VistaInicioState extends State<VistaInicio>
     currentPage = 0;
 
     if (widget.role == 'paciente') {
-      tabs = 5;
+      tabs = 4;
     } else {
       tabs = 2;
     }
@@ -180,33 +182,39 @@ class _VistaInicioState extends State<VistaInicio>
   }
 
   List<Widget> _getViewsByRole() {
-    List<Widget> views = [HomeDashboard(role: widget.role, userName: widget.userName)];
-    if (widget.role == 'paciente') {
-      views.add(ListaDoctoresView(doctores: doctores, cargando: cargandoDoctores));
-      views.add(const ListaFarmaciasView());
-      views.add(const Center(child: Text('Mis Citas / Pedidos')));
-    } else {
-      views.add(const Center(child: Text('Mi Agenda / Consultas')));
-    }
-    return views;
+  if (widget.role == 'paciente') {
+    return [
+      const Top5(), // <--- Ahora esta es la vista inicial del paciente
+      ListaDoctoresView(doctores: doctores, cargando: cargandoDoctores),
+      const ListaFarmaciasView(),
+      const Center(child: Text('Mis Citas / Pedidos')),
+    ];
+  } else {
+    return [
+      HomeDashboard(role: widget.role, userName: widget.userName),
+      const Center(child: Text('Mi Agenda / Consultas')),
+    ];
   }
+}
 
   List<Widget> _getIconsByRole() {
-    List<Widget> tabs = [_tabItem(icon: Icons.home, index: 0)];
-    int currentIndex = 1;
-    
-    if (widget.role == 'paciente') {
-      tabs.add(_tabItem(icon: Icons.medical_services, index: currentIndex++));
-      tabs.add(_tabItem(icon: Icons.local_pharmacy, index: currentIndex++));
-      tabs.add(_tabItem(icon: Icons.calendar_month, index: currentIndex++));
-    } else {
-      tabs.add(_tabItem(icon: Icons.assignment, index: currentIndex++));
-    }
-    return tabs;
+  if (widget.role == 'paciente') {
+    return [
+      _tabItem(icon: Icons.star, index: 0), // Icono para Top 5
+      _tabItem(icon: Icons.medical_services, index: 1),
+      _tabItem(icon: Icons.local_pharmacy, index: 2),
+      _tabItem(icon: Icons.calendar_month, index: 3),
+    ];
+  } else {
+    return [
+      _tabItem(icon: Icons.home, index: 0),
+      _tabItem(icon: Icons.assignment, index: 1),
+    ];
   }
+}
 
 }
-//   Widget _pagina1() {
+/* //   Widget _pagina1() {
 
 //     if (cargandoDoctores) {
 //       return Center(
@@ -511,4 +519,4 @@ class _VistaInicioState extends State<VistaInicio>
 //       },
 //     );
 //   }
-// }
+// } */
