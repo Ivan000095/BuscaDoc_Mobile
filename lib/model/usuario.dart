@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'dart:io' show Platform;
+import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:buscadoc_mobile/utils/global.dart';
 
@@ -19,29 +19,51 @@ class Usuario {
     this.token,
   });
 
-  static Future<Map<String, dynamic>> registrar(Map<String, dynamic> datosRegistro) async {
+  static Future<Map<String, dynamic>> registrar(Map<String, dynamic> datosRegistro, {File? fotoPerfil}) async {
     try {
-      var url = Uri.parse('http://127.0.0.1:8000/api/auth/register');
-      var response = await http.post(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json",
-        },
-        body: jsonEncode(datosRegistro),
-      );
+      var url = Uri.parse('${Globals.webUrl}/api/auth/register'); 
+      
+      var request = http.MultipartRequest('POST', url);
 
+      request.headers.addAll({
+        "Accept": "application/json",
+      });
+
+      datosRegistro.forEach((key, value) {
+        if (value != null) {
+          if (value is List) {
+            for (int i = 0; i < value.length; i++) {
+              request.fields['$key[$i]'] = value[i].toString();
+            }
+          } else {
+            request.fields[key] = value.toString();
+          }
+        }
+      });
+
+      if (fotoPerfil != null) {
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'foto',
+            fotoPerfil.path,
+          ),
+        );
+      }
+
+      var streamedResponse = await request.send();
+      
+      var response = await http.Response.fromStream(streamedResponse);
       var jsonResponse = jsonDecode(response.body);
 
       if (response.statusCode == 201) {
-        print(jsonResponse);
+        print("Registro exitoso: $jsonResponse");
         return {
           'success': true,
           'token': jsonResponse['data']['token'],
           'user': jsonResponse['data']['user'],
         };
       } else {
-        print(jsonResponse['message']);
+        print("Error de Laravel: ${jsonResponse['message']}");
         return {
           'success': false,
           'message': jsonResponse['message'] ?? 'Error desconocido al registrar.',
@@ -49,6 +71,7 @@ class Usuario {
         };
       }
     } catch (e) {
+      print("🚨 ERROR CRÍTICO AL REGISTRAR: $e");
       return {
         'success': false,
         'message': 'Error de conexión con el servidor. Revisa tu internet.',
@@ -238,4 +261,39 @@ class Usuario {
       };
     }
   }
+
+  static Future<Map<String, dynamic>> deleteAccount(String token, int id) async {
+      try {
+        var url = Uri.parse('${Globals.webUrl}/api/user/$id'); 
+        
+        var response = await http.delete(
+          url,
+          headers: {
+            "Accept": "application/json",
+            "Authorization": "Bearer $token",
+          },
+        );
+
+        var jsonResponse = jsonDecode(response.body);
+        
+        if (response.statusCode == 200 && jsonResponse['success'] == true) {
+          return {
+            'success': true,
+            'message': jsonResponse['message'] ?? 'Cuenta eliminada correctamente',
+          };
+        } else {
+          return {
+            'success': false,
+            'message': jsonResponse['message'] ?? 'Error al eliminar la cuenta',
+          };
+        }
+      } catch (e) {
+        print("🚨 ERROR CRÍTICO AL ELIMINAR: $e");
+        return {
+          'success': false,
+          'message': 'Error de conexión con el servidor. Revisa tu internet.',
+        };
+      }
+    }
 }
+

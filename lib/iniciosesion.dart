@@ -8,7 +8,7 @@ import 'package:buscadoc_mobile/utils/ui.dart';
 
 
 class InicioSesion extends StatefulWidget {
-  const InicioSesion({Key? key}) : super(key: key);
+  const InicioSesion({super.key});
 
   @override
   State<InicioSesion> createState() => _InicioSesionState();
