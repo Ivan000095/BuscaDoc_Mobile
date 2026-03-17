@@ -41,7 +41,7 @@ class _PantallaInicioState extends State<PantallaInicio> {
         setState(() {});
         _controller.setLooping(true);
         _controller.play();
-        _controller.setPlaybackSpeed(4);
+        _controller.setPlaybackSpeed(3);
       });
 
     Future.delayed(const Duration(seconds: 2), () {

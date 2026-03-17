@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:buscadoc_mobile/theme/tema.dart';
 import 'package:buscadoc_mobile/model/usuario.dart';
-import 'package:buscadoc_mobile/main.dart';
+import 'package:buscadoc_mobile/iniciosesion.dart';
 import 'package:buscadoc_mobile/views/profile.dart';
+import 'package:buscadoc_mobile/utils/global.dart';
 
 class UIUtils {
   static Widget divisor(double altura) {
@@ -26,6 +27,7 @@ class UIUtils {
             padding: const EdgeInsets.only(right: 16.0),
             child: Container(
               height: 36,
+              width: 36,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: Colors.grey.shade300,
@@ -111,7 +113,7 @@ class UIUtils {
     required String userEmail,
     String? fotoUrl,
   }) {
-    String baseUrl = "http://127.0.0.1:8000/storage/";
+    String baseUrl = "${Globals.webUrl}/storage/";
 
     return Drawer(
       width: MediaQuery.of(context).size.width * 0.75,
@@ -148,7 +150,7 @@ class UIUtils {
                 if (context.mounted) {
                   Navigator.pushAndRemoveUntil(
                     context,
-                    MaterialPageRoute(builder: (context) => const MyApp()),
+                    MaterialPageRoute(builder: (context) => const InicioSesion()), // 🔥 CAMBIO AQUÍ 🔥
                     (Route<dynamic> route) => false,
                   );
                 }
@@ -160,7 +162,6 @@ class UIUtils {
       ),
     );
   }
-
 
   static Widget _buildProfileOverview(BuildContext context, String userName, String role, String? fotoUrl, String baseUrl, String userEmail) {
     return Container(

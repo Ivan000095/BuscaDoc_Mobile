@@ -1,75 +1,50 @@
 import 'package:buscadoc_mobile/views/paciente/doctor.dart';
 import 'package:buscadoc_mobile/views/paciente/farmacia.dart';
-import 'package:buscadoc_mobile/views/paciente/menu.dart';
-import 'package:buscadoc_mobile/theme/tema.dart';
 import 'package:flutter/material.dart';
 
-
-class Top5 extends StatefulWidget {
+class Top5 extends StatelessWidget {
   const Top5({Key? key}) : super(key: key);
 
   @override
-  State<Top5> createState() => _Top5State();
-}
-
-class _Top5State extends State<Top5> {
-  int _selectedIndex = 0;
-
-  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 10, 20, 120),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const SizedBox(width: double.infinity, height: 10),
-                const Text(
-                  'Top 5 mejores',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 28, 
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.5,
-                  ),
-                ),
-                const Text(
-                  'Especialistas mejor calificados',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey, fontSize: 14),
-                ),
-                const SizedBox(height: 30),
-                
-               
-                _buildModernCard('Dr. Juan Carlos P. Gomez', 'Cardiólogo', 'assets/doctor1.png', true, () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const Doctor()));
-                }),
-                const SizedBox(height: 16),
-                _buildModernCard('Farmacia Guadalajara', 'Abierto 24h', 'assets/farmaciag.avif', false, () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const Farmacia()));
-                }),
-                const SizedBox(height: 16),
-                _buildModernCard('Dra. María López', 'Pediatra', 'assets/doctor1.jpg', true, () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const Doctor()));
-                }),
-                const SizedBox(height: 16),
-                _buildModernCard('Hospital Central', 'Urgencias', 'assets/doctor.png', false, () {
-                  // Acción para Hospital
-                }),
-              ],
-            ),
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        const SizedBox(width: double.infinity, height: 10),
+        const Text(
+          'Top 5 mejores',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 28, 
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.5,
           ),
-
-          
-        ],
-      ),
+        ),
+        const Text(
+          'Los mejores puntudados',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.grey, fontSize: 14),
+        ),
+        const SizedBox(height: 30),
+        
+        _buildModernCard('Dr. Juan Carlos P. Gomez', 'Cardiólogo', 'assets/doctor1.png', true, () {
+          Navigator.push(context, MaterialPageRoute(builder: (context) => const Doctor()));
+        }),
+        const SizedBox(height: 16),
+        _buildModernCard('Farmacia Guadalajara', 'Abierto 24h', 'assets/farmaciag.avif', false, () {
+          Navigator.push(context, MaterialPageRoute(builder: (context) => const Farmacia()));
+        }),
+        const SizedBox(height: 16),
+        _buildModernCard('Dra. María López', 'Pediatra', 'assets/doctor1.jpg', true, () {
+          Navigator.push(context, MaterialPageRoute(builder: (context) => const Doctor()));
+        }),
+        const SizedBox(height: 16),
+        _buildModernCard('Hospital Central', 'Urgencias', 'assets/doctor.png', false, () {
+        }),
+      ],
     );
   }
-
 
   Widget _buildModernCard(String title, String subtitle, String imagePath, bool isDoctor, VoidCallback onTap) {
     return GestureDetector(

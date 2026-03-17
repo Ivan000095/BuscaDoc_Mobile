@@ -156,6 +156,24 @@ class Usuario {
   
   static Future<void> logout() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? token = prefs.getString('token');
+
+    if (token != null) {
+      try {
+        var url = Uri.parse('${Globals.webUrl}/api/auth/logout'); 
+        
+        await http.post(
+          url,
+          headers: {
+            "Accept": "application/json",
+            "Authorization": "Bearer $token",
+          },
+        );
+        print("Sesión cerrada en el servidor.");
+      } catch (e) {
+        print("Error de conexión al cerrar sesión en Laravel: $e");
+      }
+    }
     await prefs.clear();
   }
 

@@ -1,7 +1,6 @@
 // ignore_for_file: depend_on_referenced_packages
 
 import 'package:buscadoc_mobile/utils/ui.dart';
-import 'package:buscadoc_mobile/views/paciente/top5.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_floating_bottom_bar/flutter_floating_bottom_bar.dart';
 import 'package:sqflite/sqflite.dart';
@@ -12,7 +11,6 @@ import 'package:buscadoc_mobile/model/entrega.dart';
 import 'package:buscadoc_mobile/views/HomeDashboard.dart';
 import 'package:buscadoc_mobile/views/farmacia/lista_farmacias.dart';
 import 'package:buscadoc_mobile/views/doctor/lista_doctores.dart';
-import 'package:buscadoc_mobile/views/paciente/top5.dart';
 // import 'package:get/get.dart';
 // import 'package:buscadoc_mobile/views/doctor/vistadoctor.dart';
 // import 'package:buscadoc_mobile/views/doctor/mapa.dart';
@@ -184,7 +182,7 @@ class _VistaInicioState extends State<VistaInicio>
   List<Widget> _getViewsByRole() {
   if (widget.role == 'paciente') {
     return [
-      const Top5(), // <--- Ahora esta es la vista inicial del paciente
+      HomeDashboard(role: widget.role, userName: widget.userName),
       ListaDoctoresView(doctores: doctores, cargando: cargandoDoctores),
       const ListaFarmaciasView(),
       const Center(child: Text('Mis Citas / Pedidos')),
@@ -200,7 +198,7 @@ class _VistaInicioState extends State<VistaInicio>
   List<Widget> _getIconsByRole() {
   if (widget.role == 'paciente') {
     return [
-      _tabItem(icon: Icons.star, index: 0), // Icono para Top 5
+      _tabItem(icon: Icons.home, index: 0), // Icono para Top 5
       _tabItem(icon: Icons.medical_services, index: 1),
       _tabItem(icon: Icons.local_pharmacy, index: 2),
       _tabItem(icon: Icons.calendar_month, index: 3),

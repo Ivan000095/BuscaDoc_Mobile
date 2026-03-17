@@ -29,7 +29,6 @@ class EditarPerfil extends StatefulWidget {
 class _EditarPerfilState extends State<EditarPerfil> {
   late TextEditingController _nombreController;
   late TextEditingController _correoController;
-  late TextEditingController _telefonoController;
 
   late TextEditingController _tipoSangreController;
   late TextEditingController _alergiasController;
@@ -59,7 +58,6 @@ class _EditarPerfilState extends State<EditarPerfil> {
     super.initState();
     _nombreController = TextEditingController(text: widget.nombreActual);
     _correoController = TextEditingController(text: widget.correoActual);
-    _telefonoController = TextEditingController(text: "");
 
     _tipoSangreController = TextEditingController(text: "");
     _alergiasController = TextEditingController(text: "");
@@ -147,7 +145,6 @@ class _EditarPerfilState extends State<EditarPerfil> {
   void dispose() {
     _nombreController.dispose();
     _correoController.dispose();
-    _telefonoController.dispose();
     _tipoSangreController.dispose();
     _alergiasController.dispose();
     _cirugiasController.dispose();
@@ -451,16 +448,9 @@ class _EditarPerfilState extends State<EditarPerfil> {
                     icono: Icons.email_outlined,
                     controller: _correoController,
                     keyboardType: TextInputType.emailAddress,
+                    enabled: false,
+                    opacity: 0.5,
                   ),
-                  const SizedBox(height: 15),
-                  if (_datosPerfil?['role'] == 'paciente') ...[
-                    _buildTextField(
-                      label: "Teléfono",
-                      icono: Icons.phone_outlined,
-                      controller: _telefonoController,
-                      keyboardType: TextInputType.phone,
-                    ),
-                  ],
                 ],
               ),
               if (_datosPerfil?['role'] == 'paciente') ...[
@@ -783,6 +773,8 @@ class _EditarPerfilState extends State<EditarPerfil> {
     required IconData icono,
     required TextEditingController controller,
     TextInputType keyboardType = TextInputType.text,
+    bool enabled=true,
+    double opacity = 1
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -795,9 +787,10 @@ class _EditarPerfilState extends State<EditarPerfil> {
           ),
         ),
         TextFormField(
+          enabled: enabled,
           controller: controller,
           keyboardType: keyboardType,
-          style: TextStyle(fontSize: 14, color: MiTema.negro, fontWeight: FontWeight.w500),
+          style: TextStyle(fontSize: 14, color: MiTema.negro.withOpacity(opacity), fontWeight: FontWeight.w500),
           decoration: InputDecoration(
             prefixIcon: Icon(icono, color: MiTema.azulOscuro, size: 20),
             filled: true,
