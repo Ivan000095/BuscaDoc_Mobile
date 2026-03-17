@@ -1,7 +1,5 @@
 import 'package:buscadoc_mobile/views/paciente/doctor.dart';
 import 'package:buscadoc_mobile/views/paciente/farmacia.dart';
-import 'package:buscadoc_mobile/views/paciente/menu.dart';
-import 'package:buscadoc_mobile/theme/tema.dart';
 import 'package:flutter/material.dart';
 
 
@@ -45,7 +43,7 @@ class _Top5State extends State<Top5> {
                 const SizedBox(height: 30),
                 
                
-                _buildModernCard('Dr. Juan Carlos P. Gomez', 'Cardiólogo', 'assets/doctor1.png', true, () {
+                _buildModernCard('Dr. Juan Carlos P. Gomez', 'Cardiólogo', 'assets/doctor1.jpg', true, () {
                   Navigator.push(context, MaterialPageRoute(builder: (context) => const Doctor()));
                 }),
                 const SizedBox(height: 16),

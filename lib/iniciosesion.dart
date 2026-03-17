@@ -1,3 +1,4 @@
+import 'package:bootstrap_icons/bootstrap_icons.dart';
 import 'package:buscadoc_mobile/home.dart';
 
 import 'package:flutter/material.dart';
@@ -153,6 +154,7 @@ class _InicioSesionState extends State<InicioSesion> {
                           decoration: InputDecoration(
                             filled: true,
                             fillColor: MiTema.gris,
+                            prefixIcon: const Icon(BootstrapIcons.envelope, color: Color.fromARGB(255, 11, 13, 78),size: 20 ,),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(50),
                               borderSide: BorderSide.none,
@@ -184,6 +186,7 @@ class _InicioSesionState extends State<InicioSesion> {
                           decoration: InputDecoration(
                             filled: true,
                             fillColor: MiTema.gris,
+                            prefixIcon: const Icon(BootstrapIcons.lock, color: Color.fromARGB(255, 11, 13, 78),size: 20 ,),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(50),
                               borderSide: BorderSide.none,
@@ -260,7 +263,7 @@ class _InicioSesionState extends State<InicioSesion> {
                         Expanded(
                           child: OutlinedButton.icon(
                             onPressed: () {},
-                            icon: const Icon(Icons.g_mobiledata_rounded, size: 40),
+                            icon: const Icon(BootstrapIcons.google, size: 20),
                             label: const Text('Google'),
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 2),
@@ -280,7 +283,7 @@ class _InicioSesionState extends State<InicioSesion> {
                         Expanded(
                           child: OutlinedButton.icon(
                             onPressed: () {},
-                            icon: const Icon(Icons.facebook_outlined, size: 28),
+                            icon: const Icon(BootstrapIcons.facebook, size: 28),
                             label: const Text('Facebook'),
                             style: OutlinedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 8),

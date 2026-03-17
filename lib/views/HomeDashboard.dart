@@ -1,3 +1,4 @@
+import 'package:bootstrap_icons/bootstrap_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:buscadoc_mobile/theme/tema.dart';
@@ -120,7 +121,8 @@ class _HomeDashboardState extends State<HomeDashboard> {
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
-              color: MiTema.azulOscuro,
+              color: MiTema.azulOscuro
+              ,
             ),
           ),
           Text(
@@ -139,7 +141,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
               Expanded(
                 child: _buildQuickAction(
                   "Agenda",
-                  Icons.calendar_month,
+                  BootstrapIcons.calendar2_fill,
                   MiTema.azulOscuro,
                 ),
               ),
@@ -147,7 +149,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
               Expanded(
                 child: _buildQuickAction(
                   "Mensajes",
-                  Icons.chat_bubble,
+                  BootstrapIcons.chat_fill,
                   MiTema.azulOscuro,
                 ),
               ),
@@ -163,7 +165,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
           _buildDate(
             "Siguiente cita",
             textoCita,
-            Icons.person,
+            BootstrapIcons.calendar3,
             MiTema.azulOscuro,
           ),
           if (ultimaOpinion != null)

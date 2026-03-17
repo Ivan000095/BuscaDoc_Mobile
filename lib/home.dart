@@ -1,5 +1,6 @@
 // ignore_for_file: depend_on_referenced_packages
 
+import 'package:bootstrap_icons/bootstrap_icons.dart';
 import 'package:buscadoc_mobile/utils/ui.dart';
 import 'package:buscadoc_mobile/views/paciente/top5.dart';
 import 'package:flutter/material.dart';
@@ -200,15 +201,15 @@ class _VistaInicioState extends State<VistaInicio>
   List<Widget> _getIconsByRole() {
   if (widget.role == 'paciente') {
     return [
-      _tabItem(icon: Icons.star, index: 0), // Icono para Top 5
-      _tabItem(icon: Icons.medical_services, index: 1),
-      _tabItem(icon: Icons.local_pharmacy, index: 2),
-      _tabItem(icon: Icons.calendar_month, index: 3),
+      _tabItem(icon: BootstrapIcons.bar_chart, index: 0), // Icono para Top 5
+      _tabItem(icon: BootstrapIcons.heart_pulse, index: 1),
+      _tabItem(icon: BootstrapIcons.capsule, index: 2),
+      _tabItem(icon: BootstrapIcons.calendar2_week, index: 3),
     ];
   } else {
     return [
-      _tabItem(icon: Icons.home, index: 0),
-      _tabItem(icon: Icons.assignment, index: 1),
+      _tabItem(icon: BootstrapIcons.house_fill, index: 0),
+      _tabItem(icon: BootstrapIcons.clipboard2_pulse_fill, index: 1),
     ];
   }
 }

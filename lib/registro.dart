@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:async';
+import 'package:bootstrap_icons/bootstrap_icons.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:geolocator/geolocator.dart';
@@ -365,15 +366,15 @@ class _RegistroState extends State<Registro> {
                     ),
                     const SizedBox(height: 24),
                     
-                    _campoTexto('Nombre Completo', _nombreController, icono: Icons.person_outline),
-                    _campoTexto('Correo electrónico', _emailController, icono: Icons.email_outlined, keyboardType: TextInputType.emailAddress),
-                    _campoTexto('Contraseña', _passwordController, isPassword: true, icono: Icons.lock_outline),
-                    _campoTexto('Confirmar contraseña', _confirmPasswordController, isPassword: true, icono: Icons.lock_reset_outlined),
+                    _campoTexto('Nombre Completo', _nombreController, icono: BootstrapIcons.person),
+                    _campoTexto('Correo electrónico', _emailController, icono: BootstrapIcons.envelope, keyboardType: TextInputType.emailAddress),
+                    _campoTexto('Contraseña', _passwordController, isPassword: true, icono: BootstrapIcons.lock),
+                    _campoTexto('Confirmar contraseña', _confirmPasswordController, isPassword: true, icono: BootstrapIcons.shield_lock),
                     
                     _campoTexto(
                       'Fecha de Nacimiento', 
                       _fechaNacimientoController, 
-                      icono: Icons.calendar_today_outlined,
+                      icono: BootstrapIcons.calendar2,
                       readOnly: true, 
                       onTap: _seleccionarFechaNacimiento, 
                     ),
@@ -494,10 +495,10 @@ class _RegistroState extends State<Registro> {
       children: [
         const Text('DATOS MÉDICOS BÁSICOS', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
         const SizedBox(height: 16),
-        _campoTexto('Tipo de Sangre', _tipoSangreController, icono: Icons.bloodtype_outlined),
-        _campoTexto('Contacto Emergencia', _contactoEmergenciaController, icono: Icons.phone_in_talk_outlined, keyboardType: TextInputType.phone),
-        _campoTexto('Alergias', _alergiasController, icono: Icons.medical_information_outlined),
-        _campoTexto('Padecimientos', _padecimientosController, icono: Icons.sick_outlined),
+        _campoTexto('Tipo de Sangre', _tipoSangreController, icono: BootstrapIcons.droplet),
+        _campoTexto('Contacto Emergencia', _contactoEmergenciaController, icono: BootstrapIcons.telephone, keyboardType: TextInputType.phone),
+        _campoTexto('Alergias', _alergiasController, icono: BootstrapIcons.capsule_pill),
+        _campoTexto('Padecimientos', _padecimientosController, icono: BootstrapIcons.clipboard2_pulse),
       ],
     );
   }
@@ -517,7 +518,7 @@ class _RegistroState extends State<Registro> {
             value: _especialidadIdSeleccionada,
             icon: Icon(Icons.arrow_drop_down_circle_outlined, color: MiTema.azulOscuro),
             decoration: InputDecoration(
-              prefixIcon: Icon(Icons.star_border, color: MiTema.azulOscuro, size: 20),
+              prefixIcon: Icon(BootstrapIcons.heart_pulse, color: MiTema.azulOscuro, size: 20),
               labelText: "Especialidad",
               labelStyle: TextStyle(color: Colors.grey.shade600, fontSize: 14),
               filled: true,
@@ -543,10 +544,10 @@ class _RegistroState extends State<Registro> {
           ),
         ),
 
-        _campoTexto('Cédula Profesional', _cedulaController, icono: Icons.assignment_ind_outlined),
-        _campoTexto('Costo por consulta (\$)', _costoController, icono: Icons.attach_money, keyboardType: TextInputType.number),
-        _campoTexto('Idiomas (Ej. Español, Inglés)', _idiomasController, icono: Icons.language),
-        _campoTexto('Descripción de su trabajo', _descDocController, icono: Icons.description_outlined),
+        _campoTexto('Cédula Profesional', _cedulaController, icono: BootstrapIcons.person_vcard),
+        _campoTexto('Costo por consulta (\$)', _costoController, icono: BootstrapIcons.currency_dollar, keyboardType: TextInputType.number),
+        _campoTexto('Idiomas (Ej. Español, Inglés)', _idiomasController, icono: BootstrapIcons.translate),
+        _campoTexto('Descripción de su trabajo', _descDocController, icono: BootstrapIcons.file_earmark_text),
         
         const SizedBox(height: 10),
         
