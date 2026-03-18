@@ -217,7 +217,6 @@ class _EditarPerfilState extends State<EditarPerfil> {
 
     setState(() => _guardando = true);
 
-    // 2. RECUPERAMOS EL TOKEN Y EL ID
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? token = prefs.getString('token');
     String? idString = prefs.getString('id');
@@ -260,27 +259,11 @@ class _EditarPerfilState extends State<EditarPerfil> {
 
     if (mounted) {
       if (response['success']) {
-        
         await prefs.setString('userName', _nombreController.text.trim());
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(response['message']),
-            backgroundColor: MiTema.verde,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
-          ),
-        );
+        UIUtils.showRoundedSnackBar(context, response['message'], MiTema.verde, MiTema.blanco);
         Navigator.pop(context, true);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(response['message']),
-            backgroundColor: MiTema.rojoerror,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
-          ),
-        );
+        UIUtils.showRoundedSnackBar(context, response['message'], MiTema.rojoerror, MiTema.blanco);
       }
     }
   }
@@ -412,26 +395,6 @@ class _EditarPerfilState extends State<EditarPerfil> {
                         ),
                       ),
                     ),
-                    Positioned(
-                      bottom: 0,
-                      right: 4,
-                      child: GestureDetector(
-                        onTap: () {},
-                        child: Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: MiTema.azulOscuro,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: MiTema.blanco, width: 2),
-                          ),
-                          child: const Icon(
-                            Icons.edit,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -451,16 +414,10 @@ class _EditarPerfilState extends State<EditarPerfil> {
                     icono: Icons.email_outlined,
                     controller: _correoController,
                     keyboardType: TextInputType.emailAddress,
+                    enabled: false,
+                    opacity: 0.5
                   ),
                   const SizedBox(height: 15),
-                  if (_datosPerfil?['role'] == 'paciente') ...[
-                    _buildTextField(
-                      label: "Teléfono",
-                      icono: Icons.phone_outlined,
-                      controller: _telefonoController,
-                      keyboardType: TextInputType.phone,
-                    ),
-                  ],
                 ],
               ),
               if (_datosPerfil?['role'] == 'paciente') ...[
@@ -783,6 +740,8 @@ class _EditarPerfilState extends State<EditarPerfil> {
     required IconData icono,
     required TextEditingController controller,
     TextInputType keyboardType = TextInputType.text,
+    bool enabled = true,
+    double opacity = 1.0
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -795,9 +754,10 @@ class _EditarPerfilState extends State<EditarPerfil> {
           ),
         ),
         TextFormField(
+          enabled: enabled,
           controller: controller,
           keyboardType: keyboardType,
-          style: TextStyle(fontSize: 14, color: MiTema.negro, fontWeight: FontWeight.w500),
+          style: TextStyle(fontSize: 14, color: MiTema.negro.withOpacity(opacity), fontWeight: FontWeight.w500),
           decoration: InputDecoration(
             prefixIcon: Icon(icono, color: MiTema.azulOscuro, size: 20),
             filled: true,

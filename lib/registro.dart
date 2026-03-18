@@ -62,12 +62,11 @@ class _RegistroState extends State<Registro> {
   Future<void> _cargarDatosIniciales() async {
     try {
       _listaEspecialidades = await Especialidades.all();
-      if(mounted) setState(() {}); // Actualizamos la vista si ya llegaron
+      if(mounted) setState(() {});
     } catch (e) {
       print("Error cargando especialidades: $e");
     }
 
-    // 2. Pedimos la ubicación del GPS
     await _obtenerUbicacionActual();
   }
 
@@ -214,6 +213,15 @@ class _RegistroState extends State<Registro> {
   Future<void> _procesarRegistro() async {
     if (_rolSeleccionado == 'doctor' && _especialidadIdSeleccionada == null) {
       UIUtils.showRoundedSnackBar(context, 'Seleccione una especialidad', MiTema.rojoerror, MiTema.blanco);
+
+      if (_rolSeleccionado == 'paciente') {
+      if (_fechaNacimientoController.text.isEmpty || 
+          _tipoSangreController.text.isEmpty || 
+          _contactoEmergenciaController.text.isEmpty) {
+        UIUtils.showRoundedSnackBar(context, 'Llena tu fecha de nacimiento, tipo de sangre y contacto de emergencia.', MiTema.rojoerror, MiTema.blanco);
+        return;
+      }
+    }
     }
 
     setState(() => _estaCargando = true);

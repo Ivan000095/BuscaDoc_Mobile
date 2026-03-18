@@ -2,7 +2,6 @@
 
 import 'package:bootstrap_icons/bootstrap_icons.dart';
 import 'package:buscadoc_mobile/utils/ui.dart';
-import 'package:buscadoc_mobile/views/paciente/top5.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_floating_bottom_bar/flutter_floating_bottom_bar.dart';
 import 'package:sqflite/sqflite.dart';
@@ -13,7 +12,6 @@ import 'package:buscadoc_mobile/model/entrega.dart';
 import 'package:buscadoc_mobile/views/HomeDashboard.dart';
 import 'package:buscadoc_mobile/views/farmacia/lista_farmacias.dart';
 import 'package:buscadoc_mobile/views/doctor/lista_doctores.dart';
-import 'package:buscadoc_mobile/views/paciente/top5.dart';
 // import 'package:get/get.dart';
 // import 'package:buscadoc_mobile/views/doctor/vistadoctor.dart';
 // import 'package:buscadoc_mobile/views/doctor/mapa.dart';
@@ -125,7 +123,7 @@ class _VistaInicioState extends State<VistaInicio>
 
     return SafeArea(
       child: Scaffold(
-        appBar: UIUtils.appbar(title: 'Buscamots', fotoUrl: urlFinal),
+        appBar: UIUtils.appbar(title: 'BuscaDoc', fotoUrl: urlFinal),
         drawer: UIUtils.buildMenuLateral(context, userName: widget.userName, role: widget.role, fotoUrl: widget.userFoto, userEmail: widget.userEmail),
         body: _bottom(),
       ),
@@ -185,7 +183,7 @@ class _VistaInicioState extends State<VistaInicio>
   List<Widget> _getViewsByRole() {
   if (widget.role == 'paciente') {
     return [
-      const Top5(), // <--- Ahora esta es la vista inicial del paciente
+      HomeDashboard(role: widget.role, userName: widget.userName),
       ListaDoctoresView(doctores: doctores, cargando: cargandoDoctores),
       const ListaFarmaciasView(),
       const Center(child: Text('Mis Citas / Pedidos')),
@@ -201,7 +199,7 @@ class _VistaInicioState extends State<VistaInicio>
   List<Widget> _getIconsByRole() {
   if (widget.role == 'paciente') {
     return [
-      _tabItem(icon: BootstrapIcons.bar_chart, index: 0), // Icono para Top 5
+      _tabItem(icon: BootstrapIcons.house, index: 0),
       _tabItem(icon: BootstrapIcons.heart_pulse, index: 1),
       _tabItem(icon: BootstrapIcons.capsule, index: 2),
       _tabItem(icon: BootstrapIcons.calendar2_week, index: 3),

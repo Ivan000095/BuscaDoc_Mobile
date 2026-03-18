@@ -81,7 +81,7 @@ class Usuario {
 
   static Future<Map<String, dynamic>> login(String email, String password) async {
     try {
-      var url = Uri.parse('http://127.0.0.1:8000/api/auth/login'); 
+      var url = Uri.parse('${Globals.webUrl}/api/auth/login'); 
       String deviceName = "MobileApp_Unknown";
       try {
         deviceName = Platform.isAndroid ? "Android_Device" : "iOS_Device";
@@ -156,6 +156,24 @@ class Usuario {
   
   static Future<void> logout() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? token = prefs.getString('token');
+
+    if (token != null) {
+      try {
+        var url = Uri.parse('${Globals.webUrl}/api/auth/logout'); 
+        
+        await http.post(
+          url,
+          headers: {
+            "Accept": "application/json",
+            "Authorization": "Bearer $token",
+          },
+        );
+        print("Sesión cerrada en el servidor.");
+      } catch (e) {
+        print("Error de conexión al cerrar sesión en Laravel: $e");
+      }
+    }
     await prefs.clear();
   }
 

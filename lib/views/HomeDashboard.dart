@@ -16,7 +16,7 @@ class HomeDashboard extends StatefulWidget {
 
 class _HomeDashboardState extends State<HomeDashboard> {
   late GoogleMapController mapController;
-  final LatLng _centroOcosingo = const LatLng(16.9084, -92.0977);
+  // final LatLng _centroOcosingo = const LatLng(16.9084, -92.0977);
 
   bool _cargando = true;
   Map<String, dynamic>? _dashboard;
@@ -31,19 +31,25 @@ class _HomeDashboardState extends State<HomeDashboard> {
     String? token = await Usuario.obtenerToken();
 
     if (token == null) {
-      setState(() => _cargando = false);
+      if (mounted) {
+        setState(() => _cargando = false);
+      }
       return;
     }
 
     var response = await Usuario.dashboard(token);
 
     if (response['success']) {
-      setState(() {
-        _dashboard = response['data'];
-        _cargando = false;
-      });
+      if (mounted) {
+        setState(() {
+          _dashboard = response['data'];
+          _cargando = false;
+        });
+      }
     } else {
-      setState(() => _cargando = false);
+      if (mounted) {
+        setState(() => _cargando = false);
+      }
       print("Error de API: ${response['message']}");
     }
   }
@@ -220,26 +226,26 @@ class _HomeDashboardState extends State<HomeDashboard> {
           ),
 
           const SizedBox(height: 25),
-          _buildSectionTitle("Matriz de ubicaciones"),
-          const SizedBox(height: 10),
+          // _buildSectionTitle("Matriz de ubicaciones"),
+          // const SizedBox(height: 10),
 
-          Container(
-            height: 250,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              color: Colors.white,
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: GoogleMap(
-                initialCameraPosition: CameraPosition(
-                  target: _centroOcosingo,
-                  zoom: 13,
-                ),
-                onMapCreated: (controller) => mapController = controller,
-              ),
-            ),
-          ),
+          // Container(
+          //   height: 250,
+          //   decoration: BoxDecoration(
+          //     borderRadius: BorderRadius.circular(20),
+          //     color: Colors.white,
+          //   ),
+          //   child: ClipRRect(
+          //     borderRadius: BorderRadius.circular(20),
+          //     child: GoogleMap(
+          //       initialCameraPosition: CameraPosition(
+          //         target: _centroOcosingo,
+          //         zoom: 13,
+          //       ),
+          //       onMapCreated: (controller) => mapController = controller,
+          //     ),
+          //   ),
+          // ),
 
           const SizedBox(height: 25),
           _buildSectionTitle("Servicios"),

@@ -51,7 +51,7 @@ class _InicioSesionState extends State<InicioSesion> {
       final String userEmail = userData['email'];
 
       if (mounted) {
-        UIUtils.showRoundedSnackBar(context, '¡Inición sesiada!', MiTema.verde, Colors.white, icono: Icons.check_circle);
+        UIUtils.showRoundedSnackBar(context, 'Sesión iniciada!', MiTema.verde, Colors.white, icono: Icons.check_circle);
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
