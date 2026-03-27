@@ -87,15 +87,14 @@ class Doctores {
           );
         }
         
-        print("✅ Doctores cargados con éxito: ${doctores.length}");
+        print("Doctores cargados con éxito: ${doctores.length}");
         return doctores;
         
       } else {
-        print('❌ Error del servidor: ${response.statusCode}');
+        print('Error del servidor: ${response.statusCode}');
       }
     } catch (e) {
-      // Si algo falla, ahora sí veremos el error exacto en la consola
-      print('🔴 ERROR AL CONVERTIR DATOS: $e');
+      print('ERROR AL CONVERTIR DATOS: $e');
     }
     return [];
   }

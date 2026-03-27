@@ -1,5 +1,3 @@
-import 'package:buscadoc_mobile/views/paciente/doctor.dart';
-import 'package:buscadoc_mobile/views/paciente/farmacia.dart';
 import 'package:flutter/material.dart';
 
 
@@ -44,15 +42,15 @@ class _Top5State extends State<Top5> {
                 
                
                 _buildModernCard('Dr. Juan Carlos P. Gomez', 'Cardiólogo', 'assets/doctor1.jpg', true, () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const Doctor()));
+                  // Navigator.push(context, MaterialPageRoute(builder: (context) => const Doctor()));
                 }),
                 const SizedBox(height: 16),
                 _buildModernCard('Farmacia Guadalajara', 'Abierto 24h', 'assets/farmaciag.avif', false, () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const Farmacia()));
+                  // Navigator.push(context, MaterialPageRoute(builder: (context) => const Farmacia()));
                 }),
                 const SizedBox(height: 16),
                 _buildModernCard('Dra. María López', 'Pediatra', 'assets/doctor1.jpg', true, () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const Doctor()));
+                  // Navigator.push(context, MaterialPageRoute(builder: (context) => const Doctor()));
                 }),
                 const SizedBox(height: 16),
                 _buildModernCard('Hospital Central', 'Urgencias', 'assets/doctor.png', false, () {

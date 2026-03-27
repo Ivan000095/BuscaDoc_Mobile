@@ -225,6 +225,7 @@ class Usuario {
       var jsonResponse = jsonDecode(response.body);
       print(jsonResponse);
       if (response.statusCode == 200 && jsonResponse['success'] == true) {
+        print('USUARIO CARGADO CON ÉXITO');
         return {
           'success': true,
           'data': jsonResponse['data'],
