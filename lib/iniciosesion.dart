@@ -7,6 +7,9 @@ import 'registro.dart';
 import 'package:buscadoc_mobile/model/usuario.dart';
 import 'package:buscadoc_mobile/utils/ui.dart';
 
+import 'package:magicoon_icons/icon_data/magicoon_regular_icons.dart';
+import 'package:magicoon_icons/magicoon.dart';
+
 
 class InicioSesion extends StatefulWidget {
   const InicioSesion({super.key});
@@ -60,7 +63,7 @@ class _InicioSesionState extends State<InicioSesion> {
               role: userRole,
               userName: userName,
               userFoto: userFoto,
-              userEmail: userEmail
+              userEmail: userEmail,
             ),
           ),
         );
@@ -154,7 +157,7 @@ class _InicioSesionState extends State<InicioSesion> {
                           decoration: InputDecoration(
                             filled: true,
                             fillColor: MiTema.gris,
-                            prefixIcon: const Icon(BootstrapIcons.envelope, color: Color.fromARGB(255, 11, 13, 78),size: 20 ,),
+                            prefixIcon: const Icon(MagicoonRegular.envelope, color: Color.fromARGB(255, 11, 13, 78), size: 25),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(50),
                               borderSide: BorderSide.none,
@@ -186,7 +189,7 @@ class _InicioSesionState extends State<InicioSesion> {
                           decoration: InputDecoration(
                             filled: true,
                             fillColor: MiTema.gris,
-                            prefixIcon: const Icon(BootstrapIcons.lock, color: Color.fromARGB(255, 11, 13, 78),size: 20 ,),
+                            prefixIcon: const Icon(MagicoonRegular.lock, color: Color.fromARGB(255, 11, 13, 78), size: 25),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(50),
                               borderSide: BorderSide.none,

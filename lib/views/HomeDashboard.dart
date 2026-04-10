@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:buscadoc_mobile/theme/tema.dart';
 import 'package:buscadoc_mobile/model/usuario.dart';
+import 'package:magicoon_icons/icon_data/magicoon_filled_icons.dart';
 
 class HomeDashboard extends StatefulWidget {
   final String role;
@@ -462,8 +463,8 @@ Widget _buildServiceRow() {
   return Row(
     mainAxisAlignment: MainAxisAlignment.spaceAround,
     children: [
-      _buildServiceIcon(Icons.medical_information, "Doctores"),
-      _buildServiceIcon(Icons.chat, "Mensajes"),
+      _buildServiceIcon(MagicoonFilled.stethoscope, "Doctores"),
+      _buildServiceIcon(MagicoonFilled.chatDots, "Mensajes"),
       _buildServiceIcon(Icons.history, "Historial"),
     ],
   );
@@ -481,7 +482,7 @@ Widget _buildServiceIcon(IconData icon, String label) {
             BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5),
           ],
         ),
-        child: Icon(icon, color: MiTema.azulOscuro),
+        child: Icon(icon, color: MiTema.azulOscuro, size: 29),
       ),
       const SizedBox(height: 8),
       Text(label, style: const TextStyle(fontSize: 12)),

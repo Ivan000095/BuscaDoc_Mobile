@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "754493965978",
+    "firebase_url": "https://buscadoc-b204b-default-rtdb.firebaseio.com",
+    "project_id": "buscadoc-b204b",
+    "storage_bucket": "buscadoc-b204b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:754493965978:android:6e5225eaf8ffd33e594123",
+        "android_client_info": {
+          "package_name": "com.example.xd"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCnotSyc9dOJO_xqpsw8eAQ9fA1QXV9cdU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
