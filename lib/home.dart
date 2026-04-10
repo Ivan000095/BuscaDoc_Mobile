@@ -8,10 +8,12 @@ import 'package:sqflite/sqflite.dart';
 import 'package:buscadoc_mobile/model/db.dart';
 import 'package:buscadoc_mobile/theme/tema.dart';
 import 'package:buscadoc_mobile/model/doctores.dart';
-import 'package:buscadoc_mobile/model/entrega.dart';
 import 'package:buscadoc_mobile/views/HomeDashboard.dart';
 import 'package:buscadoc_mobile/views/farmacia/lista_farmacias.dart';
 import 'package:buscadoc_mobile/views/doctor/lista_doctores.dart';
+import 'package:buscadoc_mobile/views/chat/contactos.dart';
+import 'package:magicoon_icons/magicoon.dart';
+
 // import 'package:get/get.dart';
 // import 'package:buscadoc_mobile/views/doctor/vistadoctor.dart';
 // import 'package:buscadoc_mobile/views/doctor/mapa.dart';
@@ -53,7 +55,7 @@ class _VistaInicioState extends State<VistaInicio>
       child: SizedBox(
         height: 55,
         width: 40,
-        child: Center(child: Icon(icon, color: MiTema.blanco)),
+        child: Center(child: Icon(icon, color: MiTema.blanco, size: 25,)),
       ),
     );
   }
@@ -61,7 +63,6 @@ class _VistaInicioState extends State<VistaInicio>
   late int currentPage;
   late TabController tabController;
   final List<Color> colors = [MiTema.azulOscuro];
-  late List<Entrega> entregas;
   late List<Doctores> doctores = [];
   late Database db;
 
@@ -75,7 +76,7 @@ class _VistaInicioState extends State<VistaInicio>
     currentPage = 0;
 
     if (widget.role == 'paciente') {
-      tabs = 4;
+      tabs = 5;
     } else {
       tabs = 2;
     }
@@ -88,7 +89,6 @@ class _VistaInicioState extends State<VistaInicio>
         changePage(value);
       }
     });
-    entregas = Entrega.all();
     _initAsync();
   }
 
@@ -142,7 +142,7 @@ class _VistaInicioState extends State<VistaInicio>
           icon: Icon(Icons.arrow_upward_rounded, color: iconColor, size: width),
         ),
       ),
-      borderRadius: BorderRadius.circular(500),
+      borderRadius: BorderRadius.circular(50),
       duration: Duration(seconds: 1),
       curve: Curves.decelerate,
       showIcon: true,
@@ -187,6 +187,7 @@ class _VistaInicioState extends State<VistaInicio>
       ListaDoctoresView(doctores: doctores, cargando: cargandoDoctores),
       const ListaFarmaciasView(),
       const Center(child: Text('Mis Citas / Pedidos')),
+      ListaContactosView()
     ];
   } else {
     return [
@@ -199,14 +200,15 @@ class _VistaInicioState extends State<VistaInicio>
   List<Widget> _getIconsByRole() {
   if (widget.role == 'paciente') {
     return [
-      _tabItem(icon: BootstrapIcons.house, index: 0),
-      _tabItem(icon: BootstrapIcons.heart_pulse, index: 1),
-      _tabItem(icon: BootstrapIcons.capsule, index: 2),
-      _tabItem(icon: BootstrapIcons.calendar2_week, index: 3),
+      _tabItem(icon: MagicoonRegular.home, index: 0),
+      _tabItem(icon: MagicoonFilled.stethoscope, index: 1),
+      _tabItem(icon: MagicoonFilled.pills, index: 2),
+      _tabItem(icon: MagicoonRegular.calendar, index: 3),
+      _tabItem(icon: MagicoonRegular.chatDots, index: 4),
     ];
   } else {
     return [
-      _tabItem(icon: BootstrapIcons.house_fill, index: 0),
+      _tabItem(icon: MagicoonRegular.home, index: 0),
       _tabItem(icon: BootstrapIcons.clipboard2_pulse_fill, index: 1),
     ];
   }

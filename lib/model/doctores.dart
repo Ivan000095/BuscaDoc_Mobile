@@ -51,7 +51,6 @@ class Doctores {
       if (response.statusCode == 200) {
         var jsonResponse = convert.jsonDecode(response.body) as Map<String, dynamic>;
         
-        // Extraemos la data
         List listado = jsonResponse['data'] ?? [];
         print(listado);
         List<Doctores> doctores = [];
