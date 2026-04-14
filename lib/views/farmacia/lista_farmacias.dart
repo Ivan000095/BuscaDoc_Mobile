@@ -1,32 +1,54 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:buscadoc_mobile/theme/tema.dart';
+import 'package:buscadoc_mobile/model/farmacia.dart';
+import 'package:buscadoc_mobile/views/farmacia/vistafarmacia.dart';
 
 class ListaFarmaciasView extends StatelessWidget {
-  const ListaFarmaciasView({super.key});
+  final List<Farmacia> farmacias;
+  final bool cargando;
+
+  const ListaFarmaciasView({
+    super.key, 
+    required this.farmacias, 
+    required this.cargando
+  });
 
   @override
   Widget build(BuildContext context) {
-
-    //PASGARRR: estos son datos simulados, los cambias después
-    final List<Map<String, dynamic>> farmaciasMock = [
-      {"nombre": "Farmacia San Pablo", "horario": "08:00 AM - 10:00 PM", "rating": 4.5, "distancia": "1.2 km"},
-      {"nombre": "Farmacias del Ahorro", "horario": "24 Horas", "rating": 5.0, "distancia": "2.5 km"},
-      {"nombre": "Farmacia Guadalajara", "horario": "07:00 AM - 11:00 PM", "rating": 3.8, "distancia": "3.0 km"},
-    ];
-
+    if (cargando) {
+      return Center(
+        child: CircularProgressIndicator(
+          color: MiTema.azulOscuro,
+        ),
+      );
+    }
+    
+    if (farmacias.isEmpty) {
+      return Center(
+        child: Text(
+          'Aún no hay farmacias registradas.',
+          style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+        ),
+      );
+    }
     return ListView.separated(
       padding: const EdgeInsets.only(bottom: 80, left: 16, right: 16, top: 30),
-      itemCount: farmaciasMock.length,
+      itemCount: farmacias.length,
       separatorBuilder: (context, index) => const SizedBox(height: 18), 
       itemBuilder: (context, index) {
-        final farmacia = farmaciasMock[index];
+        final farmacia = farmacias[index];
         return Container(
           height: 140,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: MiTema.blanco,
             borderRadius: BorderRadius.circular(25),
             boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 15, offset: const Offset(0, 5)),
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 15,
+                offset: const Offset(0, 5),
+              ),
             ],
           ),
           child: Material(
@@ -34,7 +56,7 @@ class ListaFarmaciasView extends StatelessWidget {
             child: InkWell(
               borderRadius: BorderRadius.circular(25),
               onTap: () {
-                // PASGARRRR: Aquí va el Get.to(() => FarmaciaDetailsView(farmacia));
+                Get.to(() => FarmaciaDetailsView(farmacia: farmacia));
               },
               child: Row(
                 children: [
@@ -42,18 +64,44 @@ class ListaFarmaciasView extends StatelessWidget {
                     width: 110,
                     height: double.infinity,
                     decoration: BoxDecoration(
-                      color: MiTema.azulOscuro.withOpacity(0.1), // Fondo azul clarito
+                      color: Colors.grey.shade200,
                       borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(25),
                         bottomLeft: Radius.circular(25),
                       ),
                     ),
-                    child: Icon(Icons.local_pharmacy, size: 50, color: MiTema.azulOscuro),
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(25),
+                        bottomLeft: Radius.circular(25),
+                      ),
+                      child: Image.network( 
+                        farmacia.imagen ?? '',
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => 
+                            const Icon(Icons.local_pharmacy, size: 50, color: Colors.grey),
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            color: Colors.grey.shade200,
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                value: loadingProgress.expectedTotalBytes != null
+                                    ? loadingProgress.cumulativeBytesLoaded /
+                                        loadingProgress.expectedTotalBytes!
+                                    : null,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 15),
                   Expanded(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 10),
+                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -61,12 +109,20 @@ class ListaFarmaciasView extends StatelessWidget {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
-                              for (int i = 0; i < 5; i++)
-                                Icon(
-                                  i < farmacia['rating'].round() ? Icons.star : Icons.star_border,
-                                  color: Colors.amber, // Estrellas doradas para farmacias
-                                  size: 18
+                              Icon(
+                                Icons.schedule, 
+                                color: MiTema.azulOscuro, 
+                                size: 14
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${farmacia.horarioEntrada} - ${farmacia.horarioSalida}',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey.shade700,
+                                  fontWeight: FontWeight.w500
                                 ),
+                              ),
                             ],
                           ),
                           Column(
@@ -74,24 +130,79 @@ class ListaFarmaciasView extends StatelessWidget {
                             children: [
                               Row(
                                 children: [
-                                  const Icon(Icons.access_time, color: Colors.grey, size: 16),
-                                  const SizedBox(width: 8),
-                                  Text(farmacia['horario'], style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                                  Icon(
+                                    Icons.description, 
+                                    color: MiTema.azulOscuro, 
+                                    size: 16
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      farmacia.descripcion.isNotEmpty 
+                                          ? farmacia.descripcion 
+                                          : 'Sin descripción',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey.shade700,
+                                        fontWeight: FontWeight.w500
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
                                 ],
                               ),
-                              const SizedBox(height: 6),
+                              const SizedBox(height: 4),
                               Row(
                                 children: [
-                                  const Icon(Icons.location_on, color: Colors.redAccent, size: 16),
-                                  const SizedBox(width: 8),
-                                  Text(farmacia['distancia'], style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                                  Icon(
+                                    Icons.location_on, 
+                                    color: MiTema.azulOscuro, 
+                                    size: 16
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      'Ver mapa',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.blue.shade700,
+                                        fontWeight: FontWeight.w500
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Icon(Icons.phone, color: MiTema.azulOscuro, size: 16),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      farmacia.telefono,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey.shade700,
+                                        fontWeight: FontWeight.w500
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ],
                           ),
                           Text(
-                            farmacia['nombre'],
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: MiTema.azulOscuro),
+                            farmacia.nombre,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: MiTema.azulOscuro,
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
