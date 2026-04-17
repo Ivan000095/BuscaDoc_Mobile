@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 
 class UrlHelper {
-  /// Abre Google Maps con las coordenadas dadas
   static Future<void> openMaps(double lat, double lng) async {
     if (lat == 0 || lng == 0) {
       Get.snackbar(

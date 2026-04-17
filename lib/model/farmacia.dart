@@ -5,6 +5,7 @@ class Farmacia {
   final String horarioEntrada;
   final String horarioSalida;
   final String telefono;
+  final String? rfc;
   final double latitud;
   final double longitud;
   final String? imagen;
@@ -19,6 +20,7 @@ class Farmacia {
     required this.horarioEntrada,
     required this.horarioSalida,
     required this.telefono,
+    required this.rfc,
     required this.latitud,
     required this.longitud,
     this.imagen,
@@ -38,6 +40,7 @@ class Farmacia {
       horarioEntrada: _formatearHora(json['horario_entrada']),
       horarioSalida: _formatearHora(json['horario_salida']),
       telefono: json['telefono']?? 'No registrado',
+      rfc: json['rfc'] ?? '',
       latitud: _parseDouble(ubicacion['lat']),
       longitud: _parseDouble(ubicacion['lng']),
       
@@ -75,6 +78,8 @@ class Farmacia {
       'descripcion': descripcion,
       'horario_entrada': horarioEntrada,
       'horario_salida': horarioSalida,
+      'telefono' : telefono,
+      'rfc' : rfc,
       'ubicacion': {
         'lat': latitud,
         'lng': longitud,
