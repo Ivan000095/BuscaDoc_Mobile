@@ -43,7 +43,7 @@ class _VistaChatViewState extends State<VistaChatView> {
     setState(() {
       miId = idLocal;
       miToken = prefs.getString('token') ?? '';
-      chatId = id1 < id2 ? "${id1}_${id2}" : "${id2}_${id1}";
+      chatId = id1 < id2 ? "${id1}_$id2" : "${id2}_$id1";
       configurando = false;
     });
   }

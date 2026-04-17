@@ -3,9 +3,10 @@ import 'package:get/get.dart';
 import 'package:buscadoc_mobile/theme/tema.dart';
 import 'package:buscadoc_mobile/model/doctores.dart';
 import 'package:buscadoc_mobile/views/doctor/vistadoctor.dart';
+import 'package:magicoon_icons/icon_data/magicoon_regular_icons.dart';
+import 'package:magicoon_icons/magicoon.dart';
 
 class ListaDoctoresView extends StatelessWidget {
-  // Ahora recibimos los datos desde el archivo VistaInicio
   final List<Doctores> doctores;
   final bool cargando;
 
@@ -81,7 +82,7 @@ class ListaDoctoresView extends StatelessWidget {
                         doctor.image,
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) => 
-                            const Icon(Icons.person, size: 50, color: Colors.grey),
+                            const Icon(MagicoonRegular.userCircle, size: 50, color: Colors.grey),
                       ),
                     ),
                   ),
@@ -99,8 +100,8 @@ class ListaDoctoresView extends StatelessWidget {
                               for (int i = 0; i < 5; i++)
                                 Icon(
                                   i < (doctor.promedio ?? 0).round() 
-                                      ? Icons.star 
-                                      : Icons.star_border,
+                                      ? MagicoonFilled.star 
+                                      : MagicoonRegular.star,
                                   color: MiTema.azulOscuro, 
                                   size: 18
                                 ),
@@ -111,7 +112,7 @@ class ListaDoctoresView extends StatelessWidget {
                             children: [
                               Row(
                                 children: [
-                                  Icon(Icons.assignment_ind, color: MiTema.azulOscuro, size: 18),
+                                  Icon(MagicoonFilled.idCard, color: MiTema.azulOscuro, size: 18),
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
@@ -130,7 +131,7 @@ class ListaDoctoresView extends StatelessWidget {
                               const SizedBox(height: 6),
                               Row(
                                 children: [
-                                  Icon(Icons.insert_drive_file_sharp, color: MiTema.azulOscuro, size: 18),
+                                  Icon(MagicoonFilled.file, color: MiTema.azulOscuro, size: 18),
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
