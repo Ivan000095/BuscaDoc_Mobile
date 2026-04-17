@@ -1,5 +1,3 @@
-// ignore_for_file: avoid_print
-
 import 'dart:convert' as convert;
 import 'package:http/http.dart' as http;
 import 'package:buscadoc_mobile/utils/global.dart';
@@ -11,6 +9,7 @@ class Farmacia {
   final String horarioEntrada;
   final String horarioSalida;
   final String telefono;
+  final String? rfc;
   final double latitud;
   final double longitud;
   final String? imagen;
@@ -25,6 +24,7 @@ class Farmacia {
     required this.horarioEntrada,
     required this.horarioSalida,
     required this.telefono,
+    required this.rfc,
     required this.latitud,
     required this.longitud,
     this.imagen,
@@ -43,7 +43,6 @@ class Farmacia {
     String? fotoRaw = dueno['foto'] ?? user['foto'];
     String? fotoFinal = fotoRaw;
     if (fotoRaw != null && !fotoRaw.startsWith('http')) {
-      // Si solo es la ruta relativa, le pegamos la URL del servidor
       fotoFinal = '${Globals.webUrl}/storage/$fotoRaw';
     }
 
@@ -53,13 +52,14 @@ class Farmacia {
       descripcion: json['descripcion'] ?? '',
       horarioEntrada: _formatearHora(json['horario_entrada']),
       horarioSalida: _formatearHora(json['horario_salida']),
-      telefono: json['telefono'] ?? 'No registrado', // Como lo quitaste del formatFarmacia, ponemos default
+      rfc: json['rfc'] ?? '',
+      telefono: json['telefono'] ?? 'No registrado',
       
-      // Coordenadas: Priorizamos el formatFarmacia (ubicacionDueno), luego el buscador (user)
+
       latitud: _parseDouble(ubicacionDueno['lat'] ?? user['latitud']),
       longitud: _parseDouble(ubicacionDueno['lng'] ?? user['longitud']),
       
-      // Imagen y Nombre: Priorizamos formatFarmacia (dueno), luego el buscador (user)
+
       imagen: fotoFinal,
       responsableNombre: dueno['nombre'] ?? user['name'] ?? 'Sin responsable',
       
@@ -68,7 +68,6 @@ class Farmacia {
     );
   }
 
-  // 👇 FUNCIÓN PARA OBTENER TODAS LAS FARMACIAS 👇
   static Future<List<Farmacia>> all() async {
     try {
       var url = Uri.parse('${Globals.webUrl}/api/farmacias');
@@ -82,24 +81,23 @@ class Farmacia {
       if (response.statusCode == 200) {
         var jsonResponse = convert.jsonDecode(response.body) as Map<String, dynamic>;
         
-        // Tu controlador devuelve { "success": true, "data": [...], "pagination": {...} }
         if (jsonResponse['success'] == true) {
           List<dynamic> listado = jsonResponse['data'] ?? [];
           
           List<Farmacia> farmacias = listado.map((item) => Farmacia.fromJson(item as Map<String, dynamic>)).toList();
           
-          print("✅ Farmacias cargadas con éxito: ${farmacias.length}");
+          print("Farmacias cargadas con éxito: ${farmacias.length}");
           return farmacias;
         } else {
-          print('❌ Error de la API (Farmacias): ${jsonResponse['message']}');
+          print('Error de la API (Farmacias): ${jsonResponse['message']}');
           return [];
         }
       } else {
-        print('❌ Falló la petición (Farmacias). Estado: ${response.statusCode}');
+        print('Falló la petición (Farmacias). Estado: ${response.statusCode}');
         return [];
       }
     } catch (e) {
-      print('❌ ERROR DE CONEXIÓN AL TRAER FARMACIAS: $e');
+      print('ERROR DE CONEXIÓN AL TRAER FARMACIAS: $e');
       return [];
     }
   }
