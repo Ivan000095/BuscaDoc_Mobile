@@ -53,6 +53,7 @@ dependencies:
   magicoon_icons: ^0.0.6
   firebase_core: ^4.6.0
   firebase_database: ^12.2.0
+  firebase_messaging: ^16.2.0
   
 
   # The following adds the Cupertino Icons font to your application.

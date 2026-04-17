@@ -5,16 +5,19 @@ import 'package:buscadoc_mobile/utils/global.dart';
 class Especialidades {
   int id;
   String nombre;
+  List<dynamic>? doctores;
 
   Especialidades({
     required this.id,
-    required this.nombre
+    required this.nombre,
+    required this.doctores
   });
 
   factory Especialidades.fromJson(Map<String, dynamic> json) {
     return Especialidades(
-      id: json['id'],
-      nombre: json['name'] ?? 'Sin nombre', 
+      id: json['id'] ?? 0,
+      nombre: json['name'] ?? json['nombre'] ?? 'Sin nombre', // Soporta 'name' (selector) y 'nombre' (dashboard)
+      doctores: json['doctors'], // <-- Extraemos la lista si viene
     );
   }
 
@@ -52,6 +55,27 @@ class Especialidades {
       }
     } catch (e) {
       print('❌ Error de conexión al traer especialidades: $e');
+      return [];
+    }
+  }
+
+  static Future<List<dynamic>> getDashboardEspecialidades() async {
+    try {
+      var url = Uri.parse('${Globals.webUrl}/api/dashboard/especialidades');
+      print('Consultando API Dashboard Especialidades: $url');
+
+      var response = await http.get(url, headers: {"Accept": "application/json"});
+
+      if (response.statusCode == 200) {
+        var jsonResponse = convert.jsonDecode(response.body) as Map<String, dynamic>;
+        
+        if (jsonResponse['success'] == true) {
+          return jsonResponse['data'];
+        }
+      }
+      return [];
+    } catch (e) {
+      print('❌ Error de conexión al traer dashboard de especialidades: $e');
       return [];
     }
   }

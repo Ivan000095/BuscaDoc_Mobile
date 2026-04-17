@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:buscadoc_mobile/model/contactos.dart';
 import 'package:buscadoc_mobile/model/usuario.dart';
 import 'package:buscadoc_mobile/views/chat/vista_chat.dart';
+import 'package:magicoon_icons/magicoon.dart';
 
 class ListaContactosView extends StatefulWidget {
   const ListaContactosView({super.key});
@@ -59,7 +60,7 @@ class _ListaContactosViewState extends State<ListaContactosView> {
         scrolledUnderElevation: 0,
         title: Row(
           children: [
-            Icon(Icons.chat_bubble_outline_rounded, color: brandNavy, size: 28),
+            Icon(MagicoonRegular.chatText, color: brandNavy, size: 28),
             const SizedBox(width: 12),
             Text(
               'Mensajes',
@@ -98,7 +99,7 @@ class _ListaContactosViewState extends State<ListaContactosView> {
                 decoration: InputDecoration(
                   hintText: 'Buscar conversación...',
                   hintStyle: TextStyle(color: textMuted.withOpacity(0.7)),
-                  prefixIcon: Icon(Icons.search, color: textMuted),
+                  prefixIcon: Icon(MagicoonRegular.search, color: textMuted),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(vertical: 15),
                 ),
@@ -131,7 +132,7 @@ class _ListaContactosViewState extends State<ListaContactosView> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.inbox_rounded,
+            MagicoonRegular.inboxEmpty,
             size: 80,
             color: textMuted.withOpacity(0.3),
           ),

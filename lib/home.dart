@@ -40,8 +40,9 @@ class VistaInicio extends StatefulWidget {
 
 class _VistaInicioState extends State<VistaInicio>
     with SingleTickerProviderStateMixin {
-  
   Widget _tabItem({required IconData icon, required int index}) {
+    bool isSelected = currentPage == index;
+    
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -53,7 +54,14 @@ class _VistaInicioState extends State<VistaInicio>
         height: 55,
         width: 40,
         child: Center(
-          child: Icon(icon, color: MiTema.blanco, size: 25),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            child: Icon(
+              icon, 
+              color: isSelected ? MiTema.blanco : MiTema.blanco.withOpacity(0.6), 
+              size: isSelected ? 27 : 24, 
+            ),
+          ),
         ),
       ),
     );
@@ -91,18 +99,16 @@ class _VistaInicioState extends State<VistaInicio>
         changePage(value);
       }
     });
-    
+
     _initAsync();
   }
 
   Future<void> _initAsync() async {
     db = await BaseDatos.abreBD();
 
-    await Future.wait([
-      _cargarDoctores(),
-      _cargarFarmacias(),
-    ]);
+    await Future.wait([_cargarDoctores(), _cargarFarmacias()]);
   }
+
   Future<void> _cargarDoctores() async {
     try {
       List<Doctores> listaDoctores = await Doctores.all();
@@ -121,6 +127,7 @@ class _VistaInicioState extends State<VistaInicio>
       }
     }
   }
+
   Future<void> _cargarFarmacias() async {
     setState(() {
       cargandoFarmacias = true;
@@ -137,10 +144,10 @@ class _VistaInicioState extends State<VistaInicio>
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        
+
         if (data['success'] == true && data['data'] != null) {
           final List<dynamic> listaData = data['data'];
-          
+
           if (mounted) {
             setState(() {
               farmacias = listaData
@@ -193,10 +200,7 @@ class _VistaInicioState extends State<VistaInicio>
 
     return SafeArea(
       child: Scaffold(
-        appBar: UIUtils.appbar(
-          title: 'BuscaDoc',
-          fotoUrl: urlFinal,
-        ),
+        appBar: UIUtils.appbar(title: 'BuscaDoc', fotoUrl: urlFinal),
         drawer: UIUtils.buildMenuLateral(
           context,
           userName: widget.userName,
@@ -212,18 +216,14 @@ class _VistaInicioState extends State<VistaInicio>
   Widget _bottom() {
     final Color barColor = MiTema.azulOscuro;
     final Color iconColor = MiTema.blanco;
-    
+
     return BottomBar(
       fit: StackFit.expand,
       icon: (width, height) => Center(
         child: IconButton(
           padding: EdgeInsets.zero,
           onPressed: null,
-          icon: Icon(
-            Icons.arrow_upward_rounded,
-            color: iconColor,
-            size: width,
-          ),
+          icon: Icon(Icons.arrow_upward_rounded, color: iconColor, size: width),
         ),
       ),
       borderRadius: BorderRadius.circular(50),
@@ -266,15 +266,9 @@ class _VistaInicioState extends State<VistaInicio>
     if (widget.role == 'paciente') {
       return [
         HomeDashboard(role: widget.role, userName: widget.userName),
-        ListaDoctoresView(
-          doctores: doctores,
-          cargando: cargandoDoctores,
-        ),
-        ListaFarmaciasView(
-          farmacias: farmacias,
-          cargando: cargandoFarmacias,
-        ),
-        
+        ListaDoctoresView(doctores: doctores, cargando: cargandoDoctores),
+        ListaFarmaciasView(farmacias: farmacias, cargando: cargandoFarmacias),
+
         const Center(child: Text('Mis Citas / Pedidos')),
         ListaContactosView(),
       ];
@@ -289,16 +283,45 @@ class _VistaInicioState extends State<VistaInicio>
   List<Widget> _getIconsByRole() {
     if (widget.role == 'paciente') {
       return [
-        _tabItem(icon: MagicoonRegular.home, index: 0),
-        _tabItem(icon: MagicoonFilled.stethoscope, index: 1),
-        _tabItem(icon: MagicoonFilled.pills, index: 2),
-        _tabItem(icon: MagicoonRegular.calendar, index: 3),
-        _tabItem(icon: MagicoonRegular.chatDots, index: 4),
+        _tabItem(
+          icon: currentPage == 0 ? MagicoonFilled.home : MagicoonRegular.home,
+          index: 0,
+        ),
+        _tabItem(
+          icon: currentPage == 1
+              ? MagicoonFilled.stethoscope
+              : MagicoonRegular.stethoscope,
+          index: 1,
+        ),
+        _tabItem(
+          icon: currentPage == 2 ? MagicoonFilled.pills : MagicoonRegular.pills,
+          index: 2,
+        ),
+        _tabItem(
+          icon: currentPage == 3
+              ? MagicoonFilled.calendar
+              : MagicoonRegular.calendar,
+          index: 3,
+        ),
+        _tabItem(
+          icon: currentPage == 4
+              ? MagicoonFilled.chatDots
+              : MagicoonRegular.chatDots,
+          index: 4,
+        ),
       ];
     } else {
       return [
-        _tabItem(icon: MagicoonRegular.home, index: 0),
-        _tabItem(icon: BootstrapIcons.clipboard2_pulse_fill, index: 1),
+        _tabItem(
+          icon: currentPage == 0 ? MagicoonFilled.home : MagicoonRegular.home,
+          index: 0,
+        ),
+        _tabItem(
+          icon: currentPage == 1
+              ? BootstrapIcons.clipboard2_pulse_fill
+              : BootstrapIcons.clipboard2_pulse,
+          index: 1,
+        ),
       ];
     }
   }
