@@ -14,6 +14,7 @@ class Farmacia {
   final double longitud;
   final String? imagen;
   final String? responsableNombre;
+    final double? promedio;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -29,17 +30,16 @@ class Farmacia {
     required this.longitud,
     this.imagen,
     this.responsableNombre,
+    this.promedio,
     required this.createdAt,
     required this.updatedAt,
   });
 
   factory Farmacia.fromJson(Map<String, dynamic> json) {
-    // 1. Extraemos los nodos dependiendo de si viene del controlador principal (dueño) o del buscador (user)
     final dueno = json['dueño'] ?? {};
     final ubicacionDueno = dueno['ubicacion'] ?? {};
     final user = json['user'] ?? {}; 
 
-    // 2. Normalizamos la imagen (Tu formatFarmacia ya le aplica asset(), pero el buscador no)
     String? fotoRaw = dueno['foto'] ?? user['foto'];
     String? fotoFinal = fotoRaw;
     if (fotoRaw != null && !fotoRaw.startsWith('http')) {
@@ -54,6 +54,7 @@ class Farmacia {
       horarioSalida: _formatearHora(json['horario_salida']),
       rfc: json['rfc'] ?? '',
       telefono: json['telefono'] ?? 'No registrado',
+      promedio: (json['promedio'] as num?)?.toDouble() ?? 0.0,
       
 
       latitud: _parseDouble(ubicacionDueno['lat'] ?? user['latitud']),
@@ -77,6 +78,8 @@ class Farmacia {
         url,
         headers: {"Accept": "application/json"},
       );
+
+
 
       if (response.statusCode == 200) {
         var jsonResponse = convert.jsonDecode(response.body) as Map<String, dynamic>;
@@ -102,7 +105,6 @@ class Farmacia {
     }
   }
 
-  // Funciones auxiliares de parseo
   static double _parseDouble(dynamic value) {
     if (value == null) return 0.0;
     if (value is double) return value;
@@ -118,5 +120,9 @@ class Farmacia {
       if (partes.length >= 2) return '${partes[0]}:${partes[1]}';
     }
     return hora.toString();
+  }
+  @override
+  String toString() {
+    return 'farmacias(id: $id, nombre: $nombre, promedio: $promedio)';
   }
 }

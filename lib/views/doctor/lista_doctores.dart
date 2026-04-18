@@ -3,8 +3,6 @@ import 'package:get/get.dart';
 import 'package:buscadoc_mobile/theme/tema.dart';
 import 'package:buscadoc_mobile/model/doctores.dart';
 import 'package:buscadoc_mobile/views/doctor/vistadoctor.dart';
-import 'package:magicoon_icons/icon_data/magicoon_regular_icons.dart';
-import 'package:magicoon_icons/magicoon.dart';
 
 class ListaDoctoresView extends StatelessWidget {
   final List<Doctores> doctores;
@@ -42,10 +40,9 @@ class ListaDoctoresView extends StatelessWidget {
       itemBuilder: (context, index) {
         final doctor = doctores[index];
         return Container(
-          height: 140,
           decoration: BoxDecoration(
             color: MiTema.blanco,
-            borderRadius: BorderRadius.circular(25),
+            borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.08),
@@ -57,68 +54,98 @@ class ListaDoctoresView extends StatelessWidget {
           child: Material(
             color: Colors.transparent,
             child: InkWell(
-              borderRadius: BorderRadius.circular(25),
+              borderRadius: BorderRadius.circular(20),
               onTap: () {
                 Get.to(() => DoctorDetailsView(doctor: doctor));
               },
-              child: Row(
-                children: [
-                  Container(
-                    width: 110,
-                    height: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade200,
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(25),
-                        bottomLeft: Radius.circular(25),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 120,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(15),
+                        child: Image.network( 
+                          doctor.image,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => 
+                              Container(
+                                color: Colors.grey.shade200,
+                                child: const Icon(Icons.person, size: 50, color: Colors.grey),
+                              ),
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Container(
+                              color: Colors.grey.shade200,
+                              child: const Center(
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                            );
+                          },
+                        ),
                       ),
                     ),
-                    child: ClipRRect(
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(25),
-                        bottomLeft: Radius.circular(25),
-                      ),
-                      child: Image.network( 
-                        doctor.image,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => 
-                            const Icon(MagicoonRegular.userCircle, size: 50, color: Colors.grey),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 15),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 10),
+                    const SizedBox(width: 15),
+                    // Información del doctor
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Row(
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
                               for (int i = 0; i < 5; i++)
                                 Icon(
-                                  i < (doctor.promedio ?? 0).round() 
-                                      ? MagicoonFilled.star 
-                                      : MagicoonRegular.star,
-                                  color: MiTema.azulOscuro, 
-                                  size: 18
+                                  i < (doctor.promedio ?? 0).round()
+                                      ? Icons.star
+                                      : Icons.star_border,
+                                  color: Colors.amber,
+                                  size: 16,
                                 ),
+                              const SizedBox(width: 4),
+                              Text(
+                                doctor.promedio?.toStringAsFixed(1) ?? '0.0',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey.shade700,
+                                ),
+                              ),
                             ],
                           ),
+                          Text(
+                            doctor.nombre,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: MiTema.azulOscuro,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 8),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              // Especialidad
                               Row(
                                 children: [
-                                  Icon(MagicoonFilled.idCard, color: MiTema.azulOscuro, size: 18),
-                                  const SizedBox(width: 8),
+                                  Icon(
+                                    Icons.medical_services,
+                                    color: MiTema.azulOscuro,
+                                    size: 16, 
+                                  ),
+                                  const SizedBox(width: 6),
                                   Expanded(
                                     child: Text(
                                       doctor.especialidad,
                                       style: TextStyle(
-                                        fontSize: 13, 
+                                        fontSize: 12,
                                         color: Colors.grey.shade700,
                                         fontWeight: FontWeight.w500
                                       ),
@@ -129,17 +156,21 @@ class ListaDoctoresView extends StatelessWidget {
                                 ],
                               ),
                               const SizedBox(height: 6),
+                              // Horario
                               Row(
                                 children: [
-                                  Icon(MagicoonFilled.file, color: MiTema.azulOscuro, size: 18),
-                                  const SizedBox(width: 8),
+                                  Icon(
+                                    Icons.access_time,
+                                    color: MiTema.azulOscuro,
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 6),
                                   Expanded(
                                     child: Text(
-                                      doctor.descripcion,
+                                      '${doctor.horarioentrada}:00 - ${doctor.horariosalida}:00 hrs',
                                       style: TextStyle(
-                                        fontSize: 13, 
+                                        fontSize: 12,
                                         color: Colors.grey.shade700,
-                                        fontWeight: FontWeight.w500
                                       ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
@@ -147,23 +178,35 @@ class ListaDoctoresView extends StatelessWidget {
                                   ),
                                 ],
                               ),
+                              const SizedBox(height: 6),
+                              // Precio
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.attach_money,
+                                    color: MiTema.azulOscuro,
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    '\$${doctor.costos.toStringAsFixed(2)}',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey.shade700,
+                                      fontWeight: FontWeight.w500
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
                             ],
-                          ),
-                          Text(
-                            doctor.nombre,
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: MiTema.azulOscuro,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

@@ -7,21 +7,31 @@ import 'package:buscadoc_mobile/views/doctor/citas.dart';
 import 'package:magicoon_icons/magicoon.dart';
 import 'package:buscadoc_mobile/views/chat/vista_chat.dart';
 import 'package:buscadoc_mobile/model/contactos.dart';
+import 'package:buscadoc_mobile/services/comment_service.dart';
+import 'package:buscadoc_mobile/views/comments/comment_dialog.dart';
+import 'package:buscadoc_mobile/views/comments/replies_view.dart';
+import 'package:buscadoc_mobile/utils/global.dart';
 
-class DoctorDetailsView extends StatelessWidget {
+class DoctorDetailsView extends StatefulWidget {
   final Doctores doctor;
 
   const DoctorDetailsView({super.key, required this.doctor});
 
   @override
+  State<DoctorDetailsView> createState() => _DoctorDetailsViewState();
+}
+
+class _DoctorDetailsViewState extends State<DoctorDetailsView> {
+  @override
   Widget build(BuildContext context) {
+    final doctor = widget.doctor;
+    
     return Scaffold(
-      backgroundColor: Colors.grey[100], // Fondo como en farmacia
+      backgroundColor: Colors.grey[100],
       body: Stack(
         children: [
           CustomScrollView(
             slivers: [
-              // 1. APP BAR CON IMAGEN Y DEGRADADO (Estilo Farmacia)
               SliverAppBar(
                 expandedHeight: 320,
                 pinned: true,
@@ -65,10 +75,9 @@ class DoctorDetailsView extends StatelessWidget {
                 ),
               ),
 
-              // 2. CUERPO DEL DETALLE
               SliverToBoxAdapter(
                 child: Container(
-                  transform: Matrix4.translationValues(0, -25, 0), // Solapamos un poco la imagen
+                  transform: Matrix4.translationValues(0, -25, 0),
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   decoration: const BoxDecoration(
                     color: Colors.white,
@@ -78,8 +87,6 @@ class DoctorDetailsView extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 30),
-                      
-                      // Nombre y Calificación
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -114,17 +121,13 @@ class DoctorDetailsView extends StatelessWidget {
                       
                       const SizedBox(height: 35),
 
-
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           _buildContactItem(
                             icon: MagicoonFilled.map,
                             label: 'Ubicación',
-                            onTap: () {
-                              // Aquí puedes abrir mapas si tienes lat/lng
-                              Get.snackbar('Mapa', 'Abriendo ubicación...');
-                            },
+                            onTap: () => Get.snackbar('Mapa', 'Abriendo ubicación...'),
                           ),
                           _buildContactItem(
                             icon: MagicoonFilled.phone,
@@ -183,8 +186,8 @@ class DoctorDetailsView extends StatelessWidget {
                                   ),
                                 );
                               },
-                              icon: const Icon(MagicoonRegular.chatDots, size: 20),
-                              label: const Text('Mensaje', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                              icon: const Icon(MagicoonRegular.calendar, size: 20),
+                              label: const Text('Agendar Cita', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: MiTema.azulOscuro,
                                 foregroundColor: Colors.white,
@@ -200,8 +203,8 @@ class DoctorDetailsView extends StatelessWidget {
                               onPressed: () {
                                 Get.snackbar('Reseñar', 'Función próximamente...');
                               },
-                              icon: const Icon(MagicoonRegular.star, size: 20),
-                              label: const Text('Reseñar', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                              icon: const Icon(MagicoonRegular.chatDots, size: 20),
+                              label: const Text('Mensaje', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
                               style: OutlinedButton.styleFrom(
                                 side: BorderSide(color: MiTema.azulOscuro, width: 2),
                                 foregroundColor: MiTema.azulOscuro,
@@ -214,7 +217,6 @@ class DoctorDetailsView extends StatelessWidget {
                       ),
 
                       const SizedBox(height: 40),
-
                       const Text(
                         'Acerca del doctor',
                         style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
@@ -226,15 +228,8 @@ class DoctorDetailsView extends StatelessWidget {
                       ),
 
                       const SizedBox(height: 40),
-
-                      const Text(
-                        'Reseñas',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
-                      ),
-                      const SizedBox(height: 15),
-                      _buildCommentsList(),
-
-                      const SizedBox(height: 120),
+                      _buildReviewsSection(context, doctor.idUsuario),
+                      const SizedBox(height: 80),
                     ],
                   ),
                 ),
@@ -256,7 +251,7 @@ class DoctorDetailsView extends StatelessWidget {
               ),
               onPressed: () => Get.to(() => AgendarCitaPage(doctor: doctor)),
               child: const Text(
-                "AGENDAR CONSULTA",
+                "AGENDAR CITA",
                 style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 1),
               ),
             ),
@@ -310,97 +305,298 @@ class DoctorDetailsView extends StatelessWidget {
     );
   }
 
-  Widget _buildCommentsList() {
-    if (doctor.comentarios.isEmpty) {
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.grey[50],
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: Colors.grey.shade200),
-        ),
-        child: Text(
-          "Aún no tiene reseñas.",
-          textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.grey[600], fontStyle: FontStyle.italic),
-        ),
-      );
-    }
-
+  Widget _buildReviewsSection(BuildContext context, int doctorUserId) {
     return Column(
-      children: doctor.comentarios.map((comentario) => Container(
-        margin: const EdgeInsets.only(bottom: 15),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.03),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Reseñas',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
+            ),
+            FutureBuilder<bool>(
+              future: CommentService().canUserReview(doctorUserId: doctorUserId),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  );
+                }
+
+                final canReview = snapshot.data ?? false;
+
+                if (canReview) {
+                  return TextButton.icon(
+                    onPressed: () async {
+                      final result = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => CommentDialog(
+                          destinatarioId: doctorUserId,
+                          onCommentAdded: () {
+                            Get.back(result: true);
+                          },
+                        ),
+                      );
+                      
+                      if (result == true) {
+                        setState(() {});
+                        Get.snackbar('Éxito', 'Tu reseña se publicó correctamente');
+                      }
+                    },
+                    icon: const Icon(Icons.add, size: 18),
+                    label: const Text('Reseñar'),
+                    style: TextButton.styleFrom(foregroundColor: MiTema.azulOscuro),
+                  );
+                } else {
+                  return Tooltip(
+                    message: 'Solo puedes reseñar después de tener una cita con este doctor',
+                    waitDuration: const Duration(milliseconds: 500),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.info_outline, size: 16, color: Colors.grey.shade500),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Cita requerida',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade500,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+              },
             ),
           ],
-          border: Border.all(color: Colors.grey.shade100),
         ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            CircleAvatar(
-              backgroundColor: MiTema.azulOscuro,
-              radius: 22,
-              backgroundImage: comentario.foto != null && comentario.foto!.isNotEmpty
-                  ? NetworkImage(comentario.foto!)
-                  : null,
-              child: comentario.foto == null || comentario.foto!.isEmpty
-                  ? Text(
-                      comentario.autor.substring(0, 1).toUpperCase(),
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                    )
-                  : null,
-            ),
-            const SizedBox(width: 15),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        const SizedBox(height: 16),
+        FutureBuilder<Map<String, dynamic>>(
+          future: CommentService().getComments(userId: doctorUserId, tipo: 'resena'),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (!snapshot.hasData || snapshot.data?['success'] != true) {
+              return _buildEmptyReviews('No hay reseñas aún. ¡Sé el primero en opinar!');
+            }
+            final data = snapshot.data!;
+            final reviews = data['data'] as List<dynamic>;
+            final promedio = data['meta']?['promedio'] ?? 0.0;
+            final totalResenas = data['meta']?['total_resenas'] ?? 0;
+
+            if (reviews.isEmpty) {
+              return _buildEmptyReviews('Aún no hay reseñas. ¡Sé el primero en opinar!');
+            }
+            
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: Row(
                     children: [
-                      Expanded(
-                        child: Text(
-                          comentario.autor,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            promedio.toStringAsFixed(1),
+                            style: const TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: List.generate(5, (index) {
+                              return Icon(
+                                index < promedio.round() ? Icons.star : Icons.star_border,
+                                color: Colors.amber,
+                                size: 16,
+                              );
+                            }),
+                          ),
+                          Text(
+                            '$totalResenas reseña${totalResenas != 1 ? 's' : ''}',
+                            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                          ),
+                        ],
                       ),
-                      Row(
-                        children: List.generate(5, (index) => Icon(
-                          index < comentario.calificacion.round() ? Icons.star : Icons.star_border,
-                          color: Colors.amber,
-                          size: 14,
-                        )),
+                      const Spacer(),
+                      OutlinedButton(
+                        onPressed: () {
+                          Get.snackbar('Info', 'Mostrando $totalResenas reseñas');
+                        },
+                        child: const Text('Ver todas'),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    comentario.contenido, 
-                    style: TextStyle(fontSize: 14, color: Colors.grey[700], height: 1.4),
+                ),
+                const SizedBox(height: 16),
+                ...reviews.map((review) => _buildReviewCard(review, context)),
+              ],
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyReviews(String message) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.rate_review_outlined, size: 48, color: Colors.grey.shade400),
+          const SizedBox(height: 12),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReviewCard(dynamic review, BuildContext context) {
+    final autor = review['autor'] ?? {};
+    final calificacion = review['calificacion'] as int?;
+    final commentId = review['id'];
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundImage: autor['foto'] != null
+                    ? NetworkImage('${Globals.webUrl}/storage/${autor['foto']}')
+                    : null,
+                child: autor['foto'] == null
+                    ? const Icon(Icons.person, size: 20, color: Colors.grey)
+                    : null,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      autor['name'] ?? 'Usuario anónimo',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _formatDate(review['created_at']),
+                      style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                    ),
+                  ],
+                ),
+              ),
+              if (calificacion != null)
+                Row(
+                  children: List.generate(5, (index) {
+                    return Icon(
+                      index < calificacion ? Icons.star : Icons.star_border,
+                      color: Colors.amber,
+                      size: 14,
+                    );
+                  }),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            review['contenido'] ?? '',
+            style: TextStyle(fontSize: 14, color: Colors.grey.shade700, height: 1.4),
+          ),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => RepliesView(
+                      commentId: commentId,
+                      comment: review,
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    comentario.fecha,
-                    style: TextStyle(fontSize: 11, color: Colors.grey[400]),
-                  ),
-                ],
+                );
+              },
+              child: Text(
+                'Ver respuestas →',
+                style: TextStyle(
+                  fontSize: 12, 
+                  color: MiTema.azulOscuro, 
+                  fontWeight: FontWeight.w600
+                ),
               ),
             ),
-          ],
-        ),
-      )).toList(),
+          ),
+        ],
+      ),
     );
+  }
+
+  String _formatDate(String dateString) {
+    try {
+      final date = DateTime.parse(dateString);
+      final now = DateTime.now();
+      final difference = now.difference(date);
+
+      if (difference.inDays == 0) {
+        if (difference.inHours == 0) {
+          return 'Hace ${difference.inMinutes} min';
+        }
+        return 'Hace ${difference.inHours} h';
+      } else if (difference.inDays < 7) {
+        return 'Hace ${difference.inDays} d';
+      } else {
+        return '${date.day}/${date.month}/${date.year}';
+      }
+    } catch (_) {
+      return dateString;
+    }
   }
 }

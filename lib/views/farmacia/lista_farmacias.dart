@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import 'package:buscadoc_mobile/theme/tema.dart';
 import 'package:buscadoc_mobile/model/farmacia.dart';
 import 'package:buscadoc_mobile/views/farmacia/vistafarmacia.dart';
-
 class ListaFarmaciasView extends StatelessWidget {
   final List<Farmacia> farmacias;
   final bool cargando;
@@ -62,7 +61,6 @@ class ListaFarmaciasView extends StatelessWidget {
                 padding: const EdgeInsets.all(12),
                 child: Row(
                   children: [
-                    // Imagen de la farmacia
                     Container(
                       width: 120,
                       height: 120,
@@ -92,12 +90,33 @@ class ListaFarmaciasView extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 15),
-                    // Información de la farmacia
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Nombre
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              for (int i = 0; i < 5; i++)
+                                Icon(
+                                  i < (farmacia.promedio ?? 0).round()
+                                      ? Icons.star
+                                      : Icons.star_border,
+                                  color: Colors.amber,
+                                  size: 16,
+                                ),
+                              
+                              const SizedBox(width: 4),
+                              Text(
+                                farmacia.promedio?.toStringAsFixed(1) ?? '0.0',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey.shade700,
+                                ),
+                              ),
+                            ],
+                          ),
                           Text(
                             farmacia.nombre,
                             style: TextStyle(
@@ -109,7 +128,6 @@ class ListaFarmaciasView extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 8),
-                          // Horario
                           Row(
                             children: [
                               Icon(
@@ -128,7 +146,6 @@ class ListaFarmaciasView extends StatelessWidget {
                             ],
                           ),
                           const SizedBox(height: 6),
-                          // Teléfono
                           Row(
                             children: [
                               Icon(
@@ -151,7 +168,6 @@ class ListaFarmaciasView extends StatelessWidget {
                             ],
                           ),
                           const SizedBox(height: 6),
-                          // Código/ID
                           Row(
                             children: [
                               Icon(
