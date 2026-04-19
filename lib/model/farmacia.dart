@@ -4,6 +4,7 @@ import 'package:buscadoc_mobile/utils/global.dart';
 
 class Farmacia {
   final int id;
+  final int idUsuario;
   final String nombre;
   final String descripcion;
   final String horarioEntrada;
@@ -20,6 +21,7 @@ class Farmacia {
 
   Farmacia({
     required this.id,
+    required this.idUsuario,
     required this.nombre,
     required this.descripcion,
     required this.horarioEntrada,
@@ -48,6 +50,7 @@ class Farmacia {
 
     return Farmacia(
       id: json['id'] ?? 0,
+      idUsuario: json['user_id'] ?? json['idUsuario'] ?? 0,
       nombre: json['nom_farmacia'] ?? 'Sin nombre',
       descripcion: json['descripcion'] ?? '',
       horarioEntrada: _formatearHora(json['horario_entrada']),
