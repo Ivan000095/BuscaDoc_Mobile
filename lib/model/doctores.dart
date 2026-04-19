@@ -1,30 +1,32 @@
-// ignore_for_file: avoid_print, avoid_function_literals_in_foreach_calls
+// ignore_for_file: avoid_print
 
 import 'dart:convert' as convert;
 import 'package:http/http.dart' as http;
-import 'package:buscadoc_mobile/model/comentarios.dart';
 import 'package:buscadoc_mobile/utils/global.dart';
 
 class Doctores {
-  int id;
-  int idUsuario;
-  String especialidad;
-  String nombre;
-  String descripcion;
-  DateTime fecha;
-  String image;
-  String telefono;
-  String idioma;
-  String cedula;
-  String rol;
-  int horarioentrada;
-  int horariosalida;
-  num costos;
-  double? promedio;
-  final List<Comentario> comentarios;
+  final int id;
+  final int idUsuario;
+  final String especialidad;
+  final String nombre;
+  final String descripcion;
+  final DateTime fecha;
+  final String image;
+  final String telefono;
+  final String idiomas;
+  final String cedula;
+  final String rol;
+  final int horarioentrada;
+  final horariosalida;
+  final num costos;
+  final double? promedio;
+  final String? latitud;
+  final String? longitud;
+  final bool? citas;
 
   Doctores({
     required this.id,
+    required this.idUsuario,
     required this.especialidad,
     required this.nombre,
     required this.descripcion,
@@ -33,143 +35,179 @@ class Doctores {
     required this.telefono,
     required this.horarioentrada,
     required this.horariosalida,
-    required this.idioma,
-    required this.idUsuario,
+    required this.idiomas,
     required this.cedula,
     required this.rol,
     required this.costos,
     required this.promedio,
-    required this.comentarios,
+    this.latitud,
+    this.longitud,
+    this.citas,
   });
 
-  static Future<List<Doctores>> all() async {
+  static Future<List<Doctores>> all({
+    String? search,
+    int? especialidadId,
+    String sortBy = 'created_at',
+    String sortDirection = 'desc',
+    int page = 1,
+    int perPage = 15,
+  }) async {
     try {
-      var url = Uri.parse('${Globals.webUrl}/api/doctors');
-      var response = await http.get(url);
+
+      final uri = Uri.parse('${Globals.webUrl}/api/doctors').replace(
+        queryParameters: {
+          if (search != null && search.isNotEmpty) 'search': search,
+          if (especialidadId != null) 'especialidad_id': especialidadId.toString(),
+          'sort_by': sortBy,
+          'sort_direction': sortDirection,
+          'page': page.toString(),
+          'per_page': perPage.clamp(1, 100).toString(),
+          },
+      );
+
+      final response = await http.get(uri);
 
       if (response.statusCode == 200) {
-        var jsonResponse = convert.jsonDecode(response.body) as Map<String, dynamic>;
+        final jsonResponse = convert.jsonDecode(response.body) as Map<String, dynamic>;
+        final List listado = jsonResponse['data'] ?? [];
         
-        List listado = jsonResponse['data'] ?? [];
-        print(listado);
-        List<Doctores> doctores = [];
-
-        for (var element in listado) {
-          String costoString = element['costos']?.toString().replaceAll('\$', '').replaceAll(',', '') ?? '0';
-          List rawComentarios = element['comentarios'] ?? [];
-          print(rawComentarios);
-          List<Comentario> listaComentarios = rawComentarios
-              .map((c) => Comentario.fromJson(c as Map<String, dynamic>))
-              .toList();
-          doctores.add(
-            Doctores(
-              id: element['id'] ?? 0,
-              idUsuario: element['user_id'],
-              especialidad: element['especialidad']?.toString() ?? 'Sin especialidad',
-              nombre: element['name']?.toString() ?? element['nombre']?.toString() ?? 'Sin nombre',
-              descripcion: element['descripcion']?.toString() ?? '',
-              fecha: element['fecha'] != null
-                  ? DateTime.tryParse(element['fecha'].toString()) ?? DateTime.now()
-                  : DateTime.now(),
-                  
-              image: element['image']?.toString() ?? 'https://via.placeholder.com/150',
-              
-              telefono: element['telefono']?.toString() ?? '',
-              horarioentrada: _parsearHora(element['horarioentrada']),
-              horariosalida: _parsearHora(element['horariosalida']),
-              idioma: element['idioma']?.toString() ?? '',
-              cedula: element['cedula']?.toString() ?? '',
-              rol: element['role'],
-              costos: num.tryParse(costoString) ?? 0,
-              promedio: element['promedio'] != null ? element['promedio'].toDouble() : 0.0,
-              comentarios: listaComentarios,
-            ),
-          );
-        }
+        print('Doctores recibidos: ${listado.length}');
         
-        print("Doctores cargados con éxito: ${doctores.length}");
-        return doctores;
-        
+        return listado.map((element) => Doctores.fromJson(element)).toList();
       } else {
         print('Error del servidor: ${response.statusCode}');
+        print('Response: ${response.body}');
       }
     } catch (e) {
-      print('ERROR AL CONVERTIR DATOS: $e');
+      print('ERROR AL CARGAR DOCTORES: $e');
     }
     return [];
   }
 
-  /* URL de imágenes
+  static Future<Doctores?> getById(int id) async {
+    try {
+      final url = Uri.parse('${Globals.webUrl}/api/doctors/$id');
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final jsonResponse = convert.jsonDecode(response.body) as Map<String, dynamic>;
+        if (jsonResponse['success'] == true) {
+          return Doctores.fromJson(jsonResponse['data']);
+        }
+      } else {
+        print('❌ Error al obtener doctor: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('❌ ERROR: $e');
+    }
+    return null;
+  }
+
+  factory Doctores.fromJson(Map<String, dynamic> json) {
+    return Doctores(
+      id: json['id'] ?? 0,
+      idUsuario: json['user_id'] ?? 0,
+      especialidad: _obtenerEspecialidad(json),
+      nombre: json['name']?.toString() ?? 'Sin nombre',
+      descripcion: json['descripcion']?.toString() ?? '',
+      fecha: _parsearFecha(json['fecha']),
+      image: _fixImageUrl(json['image']),
+      telefono: json['telefono']?.toString() ?? 'Sin teléfono',
+      horarioentrada: _parsearHora(json['horarioentrada']),
+      horariosalida: _parsearHora(json['horariosalida']),
+      idiomas: json['idioma']?.toString() ?? '',
+      cedula: json['cedula']?.toString() ?? '',
+      rol: json['role']?.toString() ?? 'doctor',
+      costos: _parsearCosto(json['costos']),
+      promedio: (json['promedio'] as num?)?.toDouble() ?? 0.0,
+      latitud: json['latitud']?.toString(),
+      longitud: json['longitud']?.toString(),
+      citas: json['citas'] as bool?,
+    );
+  }
+
+  static String _obtenerEspecialidad(Map<String, dynamic> json) {
+    if (json['especialidades'] is List &&
+        (json['especialidades'] as List).isNotEmpty) {
+      final primera = (json['especialidades'] as List).first;
+      if (primera is Map && primera['nombre'] != null) {
+        return primera['nombre'].toString();
+      }
+    }
+    if (json['especialidad'] != null) {
+      return json['especialidad'].toString();
+    }
+    return 'Sin especialidad';
+  }
+
   static String _fixImageUrl(String? path) {
-    if (path == null || path.isEmpty) return 'https://via.placeholder.com/150';
-    if (path.startsWith('http')) return path;
-    return 'http://10.0.2.2:8000/$path'; 
-  }*/
+    if (path == null || path.isEmpty) {
+      return 'https://via.placeholder.com/150?text=Sin+Foto';
+    }
+    if (path.startsWith('http')) {
+      return path;
+    }
+    return '${Globals.webUrl}/storage/$path';
+  }
+
+  static DateTime _parsearFecha(dynamic fechaRaw) {
+    if (fechaRaw == null) return DateTime.now();
+    if (fechaRaw is DateTime) return fechaRaw;
+    
+    final parsed = DateTime.tryParse(fechaRaw.toString());
+    return parsed ?? DateTime.now();
+  }
 
   static int _parsearHora(dynamic horaRaw) {
     if (horaRaw == null) return 0;
-    String horaTexto = horaRaw.toString();
+    final horaTexto = horaRaw.toString();
     if (horaTexto.isEmpty) return 0;
+    
     try {
-      List<String> partes = horaTexto.split(':');
+      final partes = horaTexto.split(':');
       if (partes.isNotEmpty) {
-        return int.parse(partes[0]);
+        return int.tryParse(partes[0]) ?? 0;
       }
-    } catch (e) {
-      print("Error parseando hora: $horaTexto");
-    }
+    } catch (_) {}
     return 0;
   }
 
-  factory Doctores.fromJson(Map<String, dynamic> element) {
-    String costoString = element['costos']?.toString().replaceAll('\$', '').replaceAll(',', '') ?? '0';
+  static num _parsearCosto(dynamic costoRaw) {
+    if (costoRaw == null) return 0;
     
-    List rawComentarios = element['comentarios'] ?? [];
-    List<Comentario> listaComentarios = rawComentarios
-        .map((c) => Comentario.fromJson(c as Map<String, dynamic>))
-        .toList();
+    final costoString = costoRaw.toString()
+        .replaceAll(RegExp(r'[^\d.,]'), '')
+        .replaceAll(',', '.');
+    
+    return num.tryParse(costoString) ?? 0;
+  }
 
-    String nombreFinal = 'Sin nombre';
-    if (element['user'] != null && element['user']['name'] != null) {
-      nombreFinal = element['user']['name'];
-    } else {
-      nombreFinal = element['name']?.toString() ?? element['nombre']?.toString() ?? 'Sin nombre';
-    }
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'user_id': idUsuario,
+      'name': nombre,
+      'especialidad': especialidad,
+      'descripcion': descripcion,
+      'fecha': fecha.toIso8601String(),
+      'image': image,
+      'telefono': telefono,
+      'horarioentrada': '$horarioentrada:00',
+      'horariosalida': '$horariosalida:00',
+      'idioma': idiomas,
+      'cedula': cedula,
+      'role': rol,
+      'costos': costos.toString(),
+      'promedio': promedio,
+      'latitud': latitud,
+      'longitud': longitud,
+      'citas': citas,
+    };
+  }
 
-    String fotoFinal = 'https://via.placeholder.com/150';
-    if (element['user'] != null && element['user']['foto'] != null) {
-      fotoFinal = element['user']['foto'];
-    } else if (element['image'] != null) {
-      fotoFinal = element['image'].toString();
-    }
-
-    String especialidadFinal = 'Sin especialidad';
-    if (element['especialidades'] != null && (element['especialidades'] as List).isNotEmpty) {
-      especialidadFinal = element['especialidades'][0]['nombre'];
-    } else {
-      especialidadFinal = element['especialidad']?.toString() ?? 'Sin especialidad';
-    }
-
-
-    return Doctores(
-      id: element['id'] ?? 0,
-      idUsuario: element['user_id'] ?? 0,
-      especialidad: especialidadFinal,
-      nombre: nombreFinal,
-      descripcion: element['descripcion']?.toString() ?? '',
-      fecha: element['fecha'] != null
-          ? DateTime.tryParse(element['fecha'].toString()) ?? DateTime.now()
-          : DateTime.now(),
-      image: '${Globals.webUrl}/storage/$fotoFinal',
-      telefono: element['telefono']?.toString() ?? '',
-      horarioentrada: _parsearHora(element['horarioentrada'] ?? element['horario_entrada']),
-      horariosalida: _parsearHora(element['horariosalida'] ?? element['horario_salida']),
-      idioma: element['idioma']?.toString() ?? element['idiomas']?.toString() ?? '',
-      cedula: element['cedula']?.toString() ?? '',
-      rol: element['role'] ?? "Doctor",
-      costos: num.tryParse(costoString) ?? element['costo'] ?? 0,
-      promedio: element['promedio'] != null ? element['promedio'].toDouble() : 0.0,
-      comentarios: listaComentarios,
-    );
+  @override
+  String toString() {
+    return 'Doctores(id: $id, nombre: $nombre, especialidad: $especialidad, promedio: $promedio)';
   }
 }

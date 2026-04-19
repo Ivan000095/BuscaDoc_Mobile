@@ -91,6 +91,7 @@ class FarmaciaDetailsView extends StatelessWidget {
                         color: Colors.grey[600],
                       ),
                     ),
+                    
                   const SizedBox(height: 30),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -187,7 +188,6 @@ class FarmaciaDetailsView extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 40),
-                  // Sección de Reseñas
                   const Text(
                     'Reseñas',
                     style: TextStyle(
@@ -254,7 +254,6 @@ class FarmaciaDetailsView extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Avatar del usuario
           CircleAvatar(
             radius: 25,
             backgroundImage: NetworkImage(

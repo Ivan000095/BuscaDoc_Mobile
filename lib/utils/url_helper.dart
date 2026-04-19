@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 
 class UrlHelper {
-  /// Abre Google Maps con las coordenadas dadas
   static Future<void> openMaps(double lat, double lng) async {
     if (lat == 0 || lng == 0) {
       Get.snackbar(
@@ -21,7 +20,7 @@ class UrlHelper {
     if (await canLaunchUrl(url)) {
       await launchUrl(
         url,
-        mode: LaunchMode.externalApplication, // Abre en la app de mapas
+        mode: LaunchMode.externalApplication,
       );
     } else {
       Get.snackbar(
@@ -34,7 +33,6 @@ class UrlHelper {
     }
   }
 
-  /// Llama a un número de teléfono
   static Future<void> makePhoneCall(String phoneNumber) async {
     if (phoneNumber.isEmpty) {
       Get.snackbar(
@@ -58,7 +56,6 @@ class UrlHelper {
     }
   }
 
-  /// Abre cualquier URL externa
   static Future<void> openUrl(String urlString) async {
     final url = Uri.parse(urlString);
     
