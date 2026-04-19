@@ -3,13 +3,25 @@ import 'package:get/get.dart';
 import 'package:buscadoc_mobile/model/farmacia.dart';
 import 'package:buscadoc_mobile/theme/tema.dart';
 import 'package:buscadoc_mobile/utils/url_helper.dart';
+import 'package:buscadoc_mobile/services/comment_service.dart';
+import 'package:buscadoc_mobile/views/comments/comment_dialog.dart';
+import 'package:buscadoc_mobile/views/comments/replies_view.dart';
+import 'package:buscadoc_mobile/utils/global.dart';
 
-class FarmaciaDetailsView extends StatelessWidget {
+class FarmaciaDetailsView extends StatefulWidget {
   final Farmacia farmacia;
 
   const FarmaciaDetailsView({super.key, required this.farmacia});
+
+  @override
+  State<FarmaciaDetailsView> createState() => _FarmaciaDetailsViewState();
+}
+
+class _FarmaciaDetailsViewState extends State<FarmaciaDetailsView> {
   @override
   Widget build(BuildContext context) {
+    final farmacia = widget.farmacia;
+    
     return Scaffold(
       backgroundColor: Colors.grey[100],
       body: CustomScrollView(
@@ -141,10 +153,17 @@ class FarmaciaDetailsView extends StatelessWidget {
                       Expanded(
                         child: ElevatedButton(
                           onPressed: () {
-                            Get.snackbar(
-                              'Reseñar',
-                              'Función de reseñas próximamente',
-                              snackPosition: SnackPosition.BOTTOM,
+                            // ✅ Abrir diálogo para crear reseña (sin validación de cita para farmacias)
+                            showDialog(
+                              context: context,
+                              builder: (context) => CommentDialog(
+                                destinatarioId: farmacia.idUsuario, // ✅ Usar farmacia.id (user_id)
+                                onCommentAdded: () {
+                                  setState(() {}); // ✅ Refrescar vista
+                                  Get.back();
+                                  Get.snackbar('Éxito', 'Tu reseña se publicó correctamente');
+                                },
+                              ),
                             );
                           },
                           style: ElevatedButton.styleFrom(
@@ -188,16 +207,10 @@ class FarmaciaDetailsView extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 40),
-                  const Text(
-                    'Reseñas',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: 15),
-                  ...List.generate(3, (index) => _buildReviewCard(index)),
+                  
+                  // ✅ SECCIÓN DE RESEÑAS DINÁMICAS
+                  _buildReviewsSection(context, farmacia.idUsuario),
+                  
                   const SizedBox(height: 30),
                 ],
               ),
@@ -207,6 +220,7 @@ class FarmaciaDetailsView extends StatelessWidget {
       ),
     );
   }
+
   Widget _buildContactItem({
     required IconData icon,
     required String label,
@@ -237,59 +251,274 @@ class FarmaciaDetailsView extends StatelessWidget {
       ),
     );
   }
-  Widget _buildReviewCard(int index) {
+
+  // ✅ SECCIÓN DE RESEÑAS (igual que en doctores, pero sin validación de cita)
+  Widget _buildReviewsSection(BuildContext context, int farmaciaUserId) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Reseñas',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+            TextButton.icon(
+              onPressed: () {
+                // ✅ Abrir diálogo para crear reseña (sin validación de cita para farmacias)
+                showDialog(
+                  context: context,
+                  builder: (context) => CommentDialog(
+                    destinatarioId: farmaciaUserId,
+                    onCommentAdded: () {
+                      setState(() {});
+                      Get.back();
+                      Get.snackbar('Éxito', 'Tu reseña se publicó correctamente');
+                    },
+                  ),
+                );
+              },
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text('Agregar'),
+              style: TextButton.styleFrom(foregroundColor: MiTema.azulOscuro),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        
+        FutureBuilder<Map<String, dynamic>>(
+          future: CommentService().getComments(userId: farmaciaUserId, tipo: 'resena'),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (!snapshot.hasData || snapshot.data?['success'] != true) {
+              return _buildEmptyReviews('No hay reseñas aún. ¡Sé el primero en opinar!');
+            }
+            
+            final data = snapshot.data!;
+            final reviews = data['data'] as List<dynamic>;
+            final promedio = data['meta']?['promedio'] ?? 0.0;
+            final totalResenas = data['meta']?['total_resenas'] ?? 0;
+
+            if (reviews.isEmpty) {
+              return _buildEmptyReviews('Aún no hay reseñas. ¡Sé el primero en opinar!');
+            }
+            
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Resumen de calificación
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: Row(
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            promedio.toStringAsFixed(1),
+                            style: const TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: List.generate(5, (index) {
+                              return Icon(
+                                index < promedio.round() ? Icons.star : Icons.star_border,
+                                color: Colors.amber,
+                                size: 16,
+                              );
+                            }),
+                          ),
+                          Text(
+                            '$totalResenas reseña${totalResenas != 1 ? 's' : ''}',
+                            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                          ),
+                        ],
+                      ),
+                      const Spacer(),
+                      OutlinedButton(
+                        onPressed: () {
+                          Get.snackbar('Info', 'Mostrando $totalResenas reseñas');
+                        },
+                        child: const Text('Ver todas'),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                // Lista de reseñas
+                ...reviews.map((review) => _buildReviewCard(review, context)),
+              ],
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyReviews(String message) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 15),
-      padding: const EdgeInsets.all(15),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.rate_review_outlined, size: 48, color: Colors.grey.shade400),
+          const SizedBox(height: 12),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
           ),
         ],
       ),
-      child: Row(
+    );
+  }
+
+  // ✅ TARJETA DE RESEÑA (igual que en doctores)
+  Widget _buildReviewCard(dynamic review, BuildContext context) {
+    final autor = review['autor'] ?? {};
+    final calificacion = review['calificacion'] as int?;
+    final commentId = review['id'];
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
-            radius: 25,
-            backgroundImage: NetworkImage(
-              'https://i.pravatar.cc/150?img=${index + 10}',
-            ),
-            onBackgroundImageError: (_, __) {},
-            child: Icon(Icons.person, color: Colors.grey[600]),
-          ),
-          const SizedBox(width: 15),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Me gusto la forma que me atendio, muy profesional',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[800],
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
           Row(
-            children: List.generate(5, (starIndex) => 
-              Icon(
-                Icons.star,
-                size: 16,
-                color: starIndex < 5 ? Colors.amber : Colors.grey[300],
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundImage: autor['foto'] != null
+                    ? NetworkImage('${Globals.webUrl}/storage/${autor['foto']}')
+                    : null,
+                child: autor['foto'] == null
+                    ? const Icon(Icons.person, size: 20, color: Colors.grey)
+                    : null,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      autor['name'] ?? 'Usuario anónimo',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _formatDate(review['created_at']),
+                      style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                    ),
+                  ],
+                ),
+              ),
+              if (calificacion != null)
+                Row(
+                  children: List.generate(5, (index) {
+                    return Icon(
+                      index < calificacion ? Icons.star : Icons.star_border,
+                      color: Colors.amber,
+                      size: 14,
+                    );
+                  }),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            review['contenido'] ?? '',
+            style: TextStyle(fontSize: 14, color: Colors.grey.shade700, height: 1.4),
+          ),
+          const SizedBox(height: 8),
+          
+          // Botón para ver respuestas
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => RepliesView(
+                      commentId: commentId,
+                      comment: review,
+                    ),
+                  ),
+                );
+              },
+              child: Text(
+                'Ver respuestas →',
+                style: TextStyle(
+                  fontSize: 12, 
+                  color: MiTema.azulOscuro, 
+                  fontWeight: FontWeight.w600
+                ),
               ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  String _formatDate(String dateString) {
+    try {
+      final date = DateTime.parse(dateString);
+      final now = DateTime.now();
+      final difference = now.difference(date);
+
+      if (difference.inDays == 0) {
+        if (difference.inHours == 0) {
+          return 'Hace ${difference.inMinutes} min';
+        }
+        return 'Hace ${difference.inHours} h';
+      } else if (difference.inDays < 7) {
+        return 'Hace ${difference.inDays} d';
+      } else {
+        return '${date.day}/${date.month}/${date.year}';
+      }
+    } catch (_) {
+      return dateString;
+    }
   }
 }
