@@ -16,7 +16,9 @@ import 'package:buscadoc_mobile/views/HomeDashboard.dart';
 import 'package:buscadoc_mobile/views/farmacia/lista_farmacias.dart';
 import 'package:buscadoc_mobile/views/doctor/lista_doctores.dart';
 import 'package:buscadoc_mobile/views/chat/contactos.dart';
+import 'package:buscadoc_mobile/views/citas.dart';
 import 'package:magicoon_icons/magicoon.dart';
+
 
 class VistaInicio extends StatefulWidget {
   final String title;
@@ -268,14 +270,13 @@ class _VistaInicioState extends State<VistaInicio>
         HomeDashboard(role: widget.role, userName: widget.userName),
         ListaDoctoresView(doctores: doctores, cargando: cargandoDoctores),
         ListaFarmaciasView(farmacias: farmacias, cargando: cargandoFarmacias),
-
-        const Center(child: Text('Mis Citas / Pedidos')),
+        MisCitasView(role: widget.role),
         ListaContactosView(),
       ];
     } else {
       return [
         HomeDashboard(role: widget.role, userName: widget.userName),
-        const Center(child: Text('Mi Agenda / Consultas')),
+        MisCitasView(role: widget.role),
       ];
     }
   }
