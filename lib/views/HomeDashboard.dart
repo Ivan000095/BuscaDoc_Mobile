@@ -32,6 +32,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
   String _selectedRole = 'doctor';
   String? _selectedSpecialty;
   final TextEditingController _searchController = TextEditingController();
+  int _limiteEspecialidades = 2;
 
   @override
   void initState() {
@@ -237,6 +238,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
           _buildSeccionEspecialidades(especialidadesDashboard),
           const SizedBox(height: 35),
           _buildMapaUbicaciones(rutasDashboard),
+          const SizedBox(height: 30),
         ],
       ),
     );
@@ -437,201 +439,236 @@ class _HomeDashboardState extends State<HomeDashboard> {
     );
   }
 
-Widget _buildSeccionEspecialidades(List<Especialidades> especialidades) {
-  if (especialidades.isEmpty) return const SizedBox.shrink();
+  Widget _buildSeccionEspecialidades(List<Especialidades> especialidades) {
+    if (especialidades.isEmpty) return const SizedBox.shrink();
 
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      const Text(
-        "Nuestras especialidades",
-        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-      ),
-      const SizedBox(height: 15),
-      SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
-        child: Row(
-          children: especialidades.map((esp) {
-            final count = esp.doctores?.length ?? 0;
-            
-            return Container(
-              margin: const EdgeInsets.only(right: 10, bottom: 5),
-              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(30),
-                border: Border.all(color: Colors.grey.shade200),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.02),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.star, color: Colors.amber, size: 16),
-                  const SizedBox(width: 8),
-                  Text(
-                    esp.nombre,
-                    style: TextStyle(
-                      color: MiTema.azulOscuro,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
+    // Calculamos si hay más especialidades por mostrar
+    bool mostrarBotonVerMas = _limiteEspecialidades < especialidades.length;
+    
+    // Filtramos la lista basándonos en el límite actual
+    List<Especialidades> especialidadesVisibles = especialidades.take(_limiteEspecialidades).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              "Nuestras especialidades",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        const SizedBox(height: 15),
+        
+        // CINTA DE BURBUJAS (Muestra todas las burbujas para dar contexto rápido)
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
+          child: Row(
+            children: especialidades.map((esp) {
+              final count = esp.doctores?.length ?? 0;
+              return Container(
+                margin: const EdgeInsets.only(right: 10, bottom: 5),
+                padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(30),
+                  border: Border.all(color: Colors.grey.shade200),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.02),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: MiTema.azulOscuro.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Text(
-                      count.toString(),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.star, color: Colors.amber, size: 16),
+                    const SizedBox(width: 8),
+                    Text(
+                      esp.nombre,
                       style: TextStyle(
                         color: MiTema.azulOscuro,
-                        fontSize: 11,
                         fontWeight: FontWeight.bold,
+                        fontSize: 13,
                       ),
                     ),
-                  ),
-                ],
-              ),
-            );
-          }).toList(),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: MiTema.azulOscuro.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        count.toString(),
+                        style: TextStyle(
+                          color: MiTema.azulOscuro,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
         ),
-      ),
-      const SizedBox(height: 25),
+        const SizedBox(height: 25),
 
-      ...especialidades.map((esp) {
-        final doctores = esp.doctores ?? [];
-        if (doctores.isEmpty) return const SizedBox.shrink();
-        
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              esp.nombre,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: MiTema.azulOscuro,
+        // MATRIZ DE DOCTORES (Muestra solo las visibles)
+        ...especialidadesVisibles.map((esp) {
+          final doctores = esp.doctores ?? [];
+          if (doctores.isEmpty) return const SizedBox.shrink();
+          
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                esp.nombre,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: MiTema.azulOscuro,
+                ),
               ),
-            ),
-            const SizedBox(height: 15),
-            SizedBox(
-              height: 210,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                physics: const BouncingScrollPhysics(),
-                itemCount: doctores.length,
-                itemBuilder: (context, index) {
-                  final doctor = doctores[index];
-                  final docName = doctor['user']?['name']?.toString() ?? 'Doctor';
-                  final docFoto = doctor['user']?['foto'] as String?;
-                  final imgUrl = docFoto != null 
-                      ? '${Globals.webUrl}/storage/$docFoto' 
-                      : '';
+              const SizedBox(height: 15),
+              SizedBox(
+                height: 210,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  itemCount: doctores.length,
+                  itemBuilder: (context, index) {
+                    final doctor = doctores[index];
+                    final docName = doctor['user']?['name']?.toString() ?? 'Doctor';
+                    final docFoto = doctor['user']?['foto'] as String?;
+                    final imgUrl = docFoto != null 
+                        ? '${Globals.webUrl}/storage/$docFoto' 
+                        : '';
 
-                  return Container(
-                    width: 150,
-                    margin: const EdgeInsets.only(right: 15, bottom: 10),
-                    padding: const EdgeInsets.all(15),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.04),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        CircleAvatar(
-                          radius: 35,
-                          backgroundColor: MiTema.azulOscuro.withOpacity(0.1),
-                          backgroundImage: docFoto != null 
-                              ? NetworkImage(imgUrl) 
-                              : null,
-                          child: docFoto == null
-                              ? Text(
-                                  docName[0].toUpperCase(),
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    color: MiTema.azulOscuro,
-                                  ),
-                                )
-                              : null,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          docName.startsWith("Dr") ? docName : "Dr. $docName",
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
+                    return Container(
+                      width: 150,
+                      margin: const EdgeInsets.only(right: 15, bottom: 10),
+                      padding: const EdgeInsets.all(15),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.04),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
                           ),
-                          textAlign: TextAlign.center,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          esp.nombre,
-                          style: const TextStyle(
-                            color: Colors.grey,
-                            fontSize: 10,
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          CircleAvatar(
+                            radius: 35,
+                            backgroundColor: MiTema.azulOscuro.withOpacity(0.1),
+                            backgroundImage: docFoto != null 
+                                ? NetworkImage(imgUrl) 
+                                : null,
+                            child: docFoto == null
+                                ? Text(
+                                    docName[0].toUpperCase(),
+                                    style: TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                      color: MiTema.azulOscuro,
+                                    ),
+                                  )
+                                : null,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const Spacer(),
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton(
-                            onPressed: () {
-                              try {
-                                final docMapeado = Doctores.fromJson(doctor);
-                                Get.to(() => DoctorDetailsView(doctor: docMapeado));
-                              } catch (_) {}
-                            },
-                            style: OutlinedButton.styleFrom(
-                              side: BorderSide(color: MiTema.azulOscuro),
-                              foregroundColor: MiTema.azulOscuro,
-                              padding: const EdgeInsets.symmetric(vertical: 6),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
+                          const SizedBox(height: 12),
+                          Text(
+                            docName.startsWith("Dr") ? docName : "Dr. $docName",
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                            textAlign: TextAlign.center,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            esp.nombre,
+                            style: const TextStyle(
+                              color: Colors.grey,
+                              fontSize: 10,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const Spacer(),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton(
+                              onPressed: () {
+                                try {
+                                  final docMapeado = Doctores.fromJson(doctor);
+                                  Get.to(() => DoctorDetailsView(doctor: docMapeado));
+                                } catch (_) {}
+                              },
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(color: MiTema.azulOscuro),
+                                foregroundColor: MiTema.azulOscuro,
+                                padding: const EdgeInsets.symmetric(vertical: 6),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                              ),
+                              child: const Text(
+                                "Ver Perfil",
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
-                            child: const Text(
-                              "Ver Perfil",
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+          );
+        }).toList(),
+
+        // BOTÓN "VER MÁS"
+        if (mostrarBotonVerMas)
+          Center(
+            child: TextButton.icon(
+              onPressed: () {
+                setState(() {
+                  // Agregamos 2 especialidades más a la vista
+                  _limiteEspecialidades += 2; 
+                });
+              },
+              icon: Icon(Icons.keyboard_arrow_down, color: MiTema.azulOscuro),
+              label: Text(
+                "Mostrar más especialidades",
+                style: TextStyle(
+                  color: MiTema.azulOscuro,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
               ),
             ),
-            const SizedBox(height: 20),
-          ],
-        );
-      }).toList(),
-    ],
-  );
-}
+          ),
+      ],
+    );
+  }
 
   Widget _buildMapaUbicaciones(List<dynamic> rutas) {
     if (rutas.isEmpty) return const SizedBox.shrink();
@@ -712,7 +749,7 @@ Widget _buildSeccionEspecialidades(List<Especialidades> especialidades) {
                   width: 250,
                   margin: const EdgeInsets.only(right: 15, bottom: 5),
                   padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(15), border: Border.all(color: Colors.grey.shade200)),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(25), border: Border.all(color: Colors.grey.shade200)),
                   child: Row(children: [
                     CircleAvatar(
                       backgroundImage: foto != null ? NetworkImage(imgUrl) : null,
