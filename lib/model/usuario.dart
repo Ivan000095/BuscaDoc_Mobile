@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'dart:io';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:buscadoc_mobile/utils/global.dart';
 
@@ -19,300 +19,291 @@ class Usuario {
     this.token,
   });
 
-  static Future<Map<String, dynamic>> registrar(Map<String, dynamic> datosRegistro, {File? fotoPerfil}) async {
+
+  static Future<Map<String, dynamic>> registrar(
+    Map<String, dynamic> datos, {
+    File? fotoPerfil,
+  }) async {
     try {
-      var url = Uri.parse('${Globals.webUrl}/api/auth/register'); 
-      
-      var request = http.MultipartRequest('POST', url);
+      final url = Uri.parse('${Globals.webUrl}/api/auth/register');
+      final request = http.MultipartRequest('POST', url)
+        ..headers['Accept'] = 'application/json';
 
-      request.headers.addAll({
-        "Accept": "application/json",
-      });
-
-      datosRegistro.forEach((key, value) {
-        if (value != null) {
-          if (value is List) {
-            for (int i = 0; i < value.length; i++) {
-              request.fields['$key[$i]'] = value[i].toString();
-            }
-          } else {
-            request.fields[key] = value.toString();
+      datos.forEach((key, value) {
+        if (value == null) return;
+        if (value is List) {
+          for (var i = 0; i < value.length; i++) {
+            request.fields['${key}[$i]'] = value[i].toString();
           }
+        } else {
+          request.fields[key] = value.toString();
         }
       });
 
       if (fotoPerfil != null) {
         request.files.add(
-          await http.MultipartFile.fromPath(
-            'foto',
-            fotoPerfil.path,
-          ),
+          await http.MultipartFile.fromPath('image', fotoPerfil.path),
         );
       }
 
-      var streamedResponse = await request.send();
-      
-      var response = await http.Response.fromStream(streamedResponse);
-      var jsonResponse = jsonDecode(response.body);
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+      final jsonResponse = jsonDecode(response.body);
 
-      if (response.statusCode == 201) {
-        print("Registro exitoso: $jsonResponse");
+      if (response.statusCode == 201 && jsonResponse['success'] == true) {
         return {
           'success': true,
           'token': jsonResponse['data']['token'],
           'user': jsonResponse['data']['user'],
         };
-      } else {
-        print("Error de Laravel: ${jsonResponse['message']}");
-        return {
-          'success': false,
-          'message': jsonResponse['message'] ?? 'Error desconocido al registrar.',
-          'errores': jsonResponse['errors']
-        };
       }
-    } catch (e) {
-      print("🚨 ERROR CRÍTICO AL REGISTRAR: $e");
+
       return {
         'success': false,
-        'message': 'Error de conexión con el servidor. Revisa tu internet.',
+        'message': jsonResponse['message'] ?? 'Error al registrar',
+        'errors': jsonResponse['errors'],
       };
+    } catch (e) {
+      return _errorConexion(e);
     }
   }
 
   static Future<Map<String, dynamic>> login(String email, String password) async {
     try {
-      var url = Uri.parse('${Globals.webUrl}/api/auth/login'); 
-      String deviceName = "MobileApp_Unknown";
-      try {
-        deviceName = Platform.isAndroid ? "Android_Device" : "iOS_Device";
-      } catch (e) {
-        // Ignorar si falla
-      }
+      final url = Uri.parse('${Globals.webUrl}/api/auth/login');
+      final deviceName = Platform.isAndroid ? 'Android_Device' : 'iOS_Device';
 
-      var response = await http.post(
+      final response = await http.post(
         url,
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json",
-        },
+        headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
         body: jsonEncode({
-          "email": email,
-          "password": password,
-          "device_name": deviceName,
+          'email': email,
+          'password': password,
+          'device_name': deviceName,
         }),
       );
 
-      var jsonResponse = jsonDecode(response.body);
-      
+      final jsonResponse = jsonDecode(response.body);
+
       if (response.statusCode == 200 && jsonResponse['success'] == true) {
+        final userData = jsonResponse['data']['user'];
+        await _guardarSesion(userData, jsonResponse['data']['token']);
         
-        SharedPreferences prefs = await SharedPreferences.getInstance();
-        
-        String id = jsonResponse['data']['user']['id'].toString();
-        String tokenGuardado = jsonResponse['data']['token'];
-        String rolGuardado = jsonResponse['data']['user']['role'] ?? 'paciente';
-        String nombreGuardado = jsonResponse['data']['user']['name'] ?? 'Usuario';
-        String fotoGuardada = jsonResponse['data']['user']['foto'] ?? '';
-        String email = jsonResponse['data']['user']['email'] ?? '';
-
-        await prefs.setString('id', id);
-        await prefs.setString('token', tokenGuardado);
-        await prefs.setString('role', rolGuardado);
-        await prefs.setString('userName', nombreGuardado);
-        await prefs.setString('userFoto', fotoGuardada);
-        await prefs.setString('userEmail', email);
-
         return {
           'success': true,
-          'token': tokenGuardado,
-          'user': jsonResponse['data']['user'], 
-        };
-      } else {
-        String errorMsg = "Credenciales incorrectas";
-        
-        if (jsonResponse['errors'] != null && jsonResponse['errors']['email'] != null) {
-          errorMsg = jsonResponse['errors']['email'][0];
-        } else if (jsonResponse['message'] != null) {
-          errorMsg = jsonResponse['message'];
-        }
-        return {
-          'success': false,
-          'message': errorMsg,
+          'token': jsonResponse['data']['token'],
+          'user': userData,
         };
       }
-    } catch (e) {
-        print(e);
+
       return {
         'success': false,
-        'message': 'Error de conexión. Revisa que el servidor esté encendido.',
+        'message': _obtenerMensajeError(jsonResponse),
       };
+    } catch (e) {
+      return _errorConexion(e);
     }
   }
 
-  static Future<String?> obtenerToken() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getString('token');
-  }
-  
   static Future<void> logout() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? token = prefs.getString('token');
-
-    if (token != null) {
-      try {
-        var url = Uri.parse('${Globals.webUrl}/api/auth/logout'); 
-        
+    try {
+      final token = await obtenerToken();
+      if (token != null) {
+        final url = Uri.parse('${Globals.webUrl}/api/auth/logout');
         await http.post(
           url,
-          headers: {
-            "Accept": "application/json",
-            "Authorization": "Bearer $token",
-          },
+          headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
         );
-        print("Sesión cerrada en el servidor.");
-      } catch (e) {
-        print("Error de conexión al cerrar sesión en Laravel: $e");
       }
-    }
-    await prefs.clear();
-  }
-
-  static Future<Map<String, dynamic>> dashboard(String token) async {
-    try {
-      print("TOKEN ENVIADO A LARAVEL: $token");
-      var url = Uri.parse('http://127.0.0.1:8000/api/home-dashboard');
-      var response = await http.get(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
-      var jsonResponse = jsonDecode(response.body);
-      print(jsonResponse);
-      if (response.statusCode == 200 && jsonResponse['success'] == true) {
-        return {
-          'success': true,
-          'data': jsonResponse['data'],
-        };
-      } else {
-        return {
-          'success': false,
-          'message': jsonResponse['message'] ?? 'Error al obtener los datos',
-        };
-      }
-    } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error de conexión con el servidor. Revisa tu internet.',
-      };
+    } catch (_) {
+    } finally {
+      await _limpiarSesion();
     }
   }
 
   static Future<Map<String, dynamic>> show(String token, int id) async {
     try {
-      print("TOKEN ENVIADO A LARAVEL: $token");
-      var url = Uri.parse('http://127.0.0.1:8000/api/user/$id');
-      var response = await http.get(
+      final url = Uri.parse('${Globals.webUrl}/api/user/$id');
+      final response = await http.get(
         url,
         headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json",
-          "Authorization": "Bearer $token",
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
         },
       );
-      var jsonResponse = jsonDecode(response.body);
-      print(jsonResponse);
+
+      final jsonResponse = jsonDecode(response.body);
+
       if (response.statusCode == 200 && jsonResponse['success'] == true) {
-        print('USUARIO CARGADO CON ÉXITO');
-        return {
-          'success': true,
-          'data': jsonResponse['data'],
-        };
-      } else {
-        return {
-          'success': false,
-          'message': jsonResponse['message'] ?? 'Error al obtener los datos',
-        };
+        return {'success': true, 'data': jsonResponse['data']};
       }
-    } catch (e) {
+
       return {
         'success': false,
-        'message': 'Error de conexión con el servidor. Revisa tu internet.',
+        'message': jsonResponse['message'] ?? 'Error al cargar perfil',
       };
+    } catch (e) {
+      return _errorConexion(e);
     }
   }
 
-  static Future<Map<String, dynamic>> update(String token, int id, Map<String, dynamic> datosActualizados) async {
+  static Future<Map<String, dynamic>> update(
+    String token,
+    int id,
+    Map<String, dynamic> datos, {
+    File? fotoPerfil,
+  }) async {
     try {
-      var url = Uri.parse('${Globals.webUrl}/api/user/$id');
-      print(url);
-      
-      var response = await http.put(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json",
-          "Authorization": "Bearer $token",
-        },
-        body: jsonEncode(datosActualizados),
-      );
+      final url = Uri.parse('${Globals.webUrl}/api/user/$id');
 
-      var jsonResponse = jsonDecode(response.body);
-      
-      if (response.statusCode == 200 && jsonResponse['success'] == true) {
-        return {
-          'success': true,
-          'message': jsonResponse['message'] ?? 'Perfil actualizado correctamente',
-        };
+      if (fotoPerfil != null) {
+        final request = http.MultipartRequest('POST', url) 
+          ..headers['Accept'] = 'application/json'
+          ..headers['Authorization'] = 'Bearer $token'
+          ..fields['_method'] = 'PUT';
+
+        datos.forEach((key, value) {
+          if (value != null) {
+            if (value is List) {
+              for (var i = 0; i < value.length; i++) {
+                request.fields['${key}[$i]'] = value[i].toString();
+              }
+            } else {
+              request.fields[key] = value.toString();
+            }
+          }
+        });
+
+        request.files.add(await http.MultipartFile.fromPath('image', fotoPerfil.path));
+        final streamedResponse = await request.send();
+        final response = await http.Response.fromStream(streamedResponse);
+        final jsonResponse = jsonDecode(response.body);
+
+        return _procesarRespuesta(response.statusCode, jsonResponse, 'actualizar');
       } else {
-        return {
-          'success': false,
-          'message': jsonResponse['message'] ?? 'Error al actualizar los datos',
-        };
+        final response = await http.put(
+          url,
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+          body: jsonEncode(datos),
+        );
+
+        final jsonResponse = jsonDecode(response.body);
+        return _procesarRespuesta(response.statusCode, jsonResponse, 'actualizar');
       }
     } catch (e) {
-      print("🚨 ERROR CRÍTICO AL ACTUALIZAR: $e");
-      return {
-        'success': false,
-        'message': 'Error de conexión con el servidor. Revisa tu internet.',
-      };
+      return _errorConexion(e);
     }
   }
 
   static Future<Map<String, dynamic>> deleteAccount(String token, int id) async {
-      try {
-        var url = Uri.parse('${Globals.webUrl}/api/user/$id'); 
-        
-        var response = await http.delete(
-          url,
-          headers: {
-            "Accept": "application/json",
-            "Authorization": "Bearer $token",
-          },
-        );
+    try {
+      final url = Uri.parse('${Globals.webUrl}/api/user/$id');
+      final response = await http.delete(
+        url,
+        headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
+      );
 
-        var jsonResponse = jsonDecode(response.body);
-        
-        if (response.statusCode == 200 && jsonResponse['success'] == true) {
-          return {
-            'success': true,
-            'message': jsonResponse['message'] ?? 'Cuenta eliminada correctamente',
-          };
-        } else {
-          return {
-            'success': false,
-            'message': jsonResponse['message'] ?? 'Error al eliminar la cuenta',
-          };
-        }
-      } catch (e) {
-        print("🚨 ERROR CRÍTICO AL ELIMINAR: $e");
-        return {
-          'success': false,
-          'message': 'Error de conexión con el servidor. Revisa tu internet.',
-        };
-      }
+      final jsonResponse = jsonDecode(response.body);
+      return _procesarRespuesta(response.statusCode, jsonResponse, 'eliminar');
+    } catch (e) {
+      return _errorConexion(e);
     }
-}
+  }
 
+  static Future<Map<String, dynamic>> dashboard(String token) async {
+    try {
+      final url = Uri.parse('${Globals.webUrl}/api/home-dashboard');
+      final response = await http.get(
+        url,
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      final jsonResponse = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && jsonResponse['success'] == true) {
+        return {'success': true, 'data': jsonResponse['data']};
+      }
+
+      return {
+        'success': false,
+        'message': jsonResponse['message'] ?? 'Error al cargar dashboard',
+      };
+    } catch (e) {
+      return _errorConexion(e);
+    }
+  }
+
+  static Future<String?> obtenerToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('token');
+  }
+
+  static Future<Map<String, String>> obtenerDatosSesion() async {
+    final prefs = await SharedPreferences.getInstance();
+    return {
+      'id': prefs.getString('id') ?? '',
+      'token': prefs.getString('token') ?? '',
+      'role': prefs.getString('role') ?? '',
+      'name': prefs.getString('userName') ?? '',
+      'foto': prefs.getString('userFoto') ?? '',
+      'email': prefs.getString('userEmail') ?? '',
+    };
+  }
+
+  static Future<void> _guardarSesion(Map<String, dynamic> user, String token) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('id', user['id']?.toString() ?? '');
+    await prefs.setString('token', token);
+    await prefs.setString('role', user['role'] ?? 'paciente');
+    await prefs.setString('userName', user['name'] ?? 'Usuario');
+    await prefs.setString('userFoto', user['foto'] ?? '');
+    await prefs.setString('userEmail', user['email'] ?? '');
+  }
+
+  static Future<void> _limpiarSesion() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+  }
+
+  static String _obtenerMensajeError(Map<String, dynamic> response) {
+    if (response['errors'] != null) {
+      final errors = response['errors'] as Map;
+      if (errors['email'] != null) return errors['email'][0];
+      if (errors['password'] != null) return errors['password'][0];
+    }
+    return response['message'] ?? 'Credenciales incorrectas';
+  }
+
+  static Map<String, dynamic> _procesarRespuesta(
+    int statusCode,
+    Map<String, dynamic> json,
+    String accion,
+  ) {
+    if (statusCode == 200 && json['success'] == true) {
+      return {
+        'success': true,
+        'message': json['message'] ?? 'Operación exitosa',
+      };
+    }
+    return {
+      'success': false,
+      'message': json['message'] ?? 'Error al $accion',
+      'errors': json['errors'],
+    };
+  }
+
+  static Map<String, dynamic> _errorConexion(dynamic error) {
+    return {
+      'success': false,
+      'message': 'Error de conexión. Verifica tu internet o que el servidor esté activo.',
+      'debug': error.toString(), // Solo para desarrollo, remover en producción
+    };
+  }
+}
