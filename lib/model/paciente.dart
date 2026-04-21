@@ -1,5 +1,6 @@
 import 'dart:convert' as convert;
 import 'package:http/http.dart' as http;
+import 'package:buscadoc_mobile/utils/global.dart';
 
 class Paciente {
   int id;
@@ -29,7 +30,7 @@ class Paciente {
   
   static Future<Paciente?> getProfile() async {
     try {
-      var url = Uri.parse('http://localhost:8000/api/patient/profile'); 
+      var url = Uri.parse('${Globals.webUrl}/api/patient/profile'); 
       var response = await http.get(
         url,
         headers: {
@@ -52,7 +53,7 @@ class Paciente {
   
   Future<bool> update() async {
     try {
-      var url = Uri.parse('http://localhost:8000/api/patient/update/$id');
+      var url = Uri.parse('${Globals.webUrl}/api/patient/update/$id');
       var response = await http.put(
         url,
         headers: {

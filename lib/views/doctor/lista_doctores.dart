@@ -120,10 +120,17 @@ class _ListaDoctoresViewState extends State<ListaDoctoresView> {
                               child: Icon(MagicoonFilled.star, color: MiTema.azulOscuro, size: 14),
                             ),
                             const SizedBox(width: 10),
-                            Text(
-                              especialidad,
-                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: MiTema.azulOscuro),
+                            
+                            // 👇 SOLUCIÓN: Envolvemos el texto en un Flexible
+                            Flexible(
+                              child: Text(
+                                especialidad,
+                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: MiTema.azulOscuro),
+                                maxLines: 2, // Permite que use hasta 2 líneas si es muy largo
+                                overflow: TextOverflow.ellipsis, // Pone "..." si de plano no cabe
+                              ),
                             ),
+                            
                             const SizedBox(width: 10),
                             Expanded(child: Divider(color: Colors.grey.shade300)),
                           ],

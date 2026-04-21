@@ -66,7 +66,14 @@ class _DoctorDetailsViewState extends State<DoctorDetailsView> {
                   background: Stack(
                     fit: StackFit.expand,
                     children: [
-                      Image.network(doctor.image, fit: BoxFit.cover),
+                      Image.network(
+                        doctor.image, 
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          color: const Color(0xFFF5F7F9),
+                          child: Icon(MagicoonFilled.user, size: 80, color: Colors.grey.shade300),
+                        ),
+                      ),
                       const DecoratedBox(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
