@@ -162,17 +162,54 @@ class _DoctorDetailsViewState extends State<DoctorDetailsView> {
                           borderRadius: BorderRadius.circular(25),
                           boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 15)],
                         ),
-                        child: Column(
-                          children: [
-                            _buildScheduleRow("Lunes - Viernes", "${doctor.horarioentrada} - ${doctor.horariosalida} hrs"),
-                            const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Divider(color: Color(0xFFF0F0F0))),
-                            _buildScheduleRow("Sábados", "09:00 - 14:00 hrs"),
-                            const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Divider(color: Color(0xFFF0F0F0))),
-                            _buildScheduleRow("Domingos", "Cerrado", isClosed: true),
-                          ],
-                        ),
-                      ),
+                        child: doctor.disponibilidades.isEmpty
+                            ? const Center(
+                                child: Text(
+                                  "No hay horarios registrados", 
+                                  style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic)
+                                )
+                              )
+                            : Builder(
+                                builder: (context) {
+                                  const diasNombres = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
+                                  List<dynamic> listaOrdenada = List.from(doctor.disponibilidades);
+                                  
+                                  listaOrdenada.sort((a, b) {
+                                    // CORRECCIÓN 1: Forzamos la conversión a Entero (int)
+                                    int diaA = int.tryParse(a['dia_semana'].toString()) ?? 0;
+                                    int diaB = int.tryParse(b['dia_semana'].toString()) ?? 0;
+
+                                    diaA = diaA == 0 ? 7 : diaA;
+                                    diaB = diaB == 0 ? 7 : diaB;
+                                    return diaA.compareTo(diaB);
+                                  });
+
+                                  List<Widget> filas = [];
+                                  for (int i = 0; i < listaOrdenada.length; i++) {
+                                    var disp = listaOrdenada[i];
+                                    
+                                    // CORRECCIÓN 2: Aseguramos que el índice sea un Entero válido
+                                    int diaNum = int.tryParse(disp['dia_semana'].toString()) ?? 0;
+                                    String nombreDia = diasNombres[diaNum];
+                                    
+                                    String hInicio = disp['hora_inicio'].toString().substring(0, 5);
+                                    String hFin = disp['hora_fin'].toString().substring(0, 5);
+
+                                    filas.add(_buildScheduleRow(nombreDia, "$hInicio - $hFin hrs"));
+
+                                    if (i < listaOrdenada.length - 1) {
+                                      filas.add(const Padding(
+                                        padding: EdgeInsets.symmetric(vertical: 8), 
+                                        child: Divider(color: Color(0xFFF0F0F0))
+                                      ));
+                                    }
+                                  }
+
+                                  return Column(children: filas);
+                                },
+                              ),
+                      ),
                       const SizedBox(height: 40),
                       _buildReviewsSection(context, doctor.idUsuario),
                       const SizedBox(height: 120), // Padding para el botón fijo

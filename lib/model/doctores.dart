@@ -23,6 +23,7 @@ class Doctores {
   final String? latitud;
   final String? longitud;
   final bool? citas;
+  final List<dynamic> disponibilidades;
 
   Doctores({
     required this.id,
@@ -40,6 +41,7 @@ class Doctores {
     required this.rol,
     required this.costos,
     required this.promedio,
+    required this.disponibilidades,
     this.latitud,
     this.longitud,
     this.citas,
@@ -105,6 +107,7 @@ class Doctores {
   }
 
   factory Doctores.fromJson(Map<String, dynamic> json) {
+    var datosDisponibilidad = json['disponibilidades'] ?? json['disponibilidad'] ?? [];
     return Doctores(
       id: json['id'] ?? 0,
       idUsuario: json['user_id'] ?? json['user']?['id'] ?? 0,
@@ -124,8 +127,10 @@ class Doctores {
       latitud: json['latitud']?.toString(),
       longitud: json['longitud']?.toString(),
       citas: json['citas'] as bool?,
+      disponibilidades: datosDisponibilidad is List ? datosDisponibilidad : [],
     );
   }
+
 
   static String _obtenerEspecialidad(Map<String, dynamic> json) {
     if (json['especialidades'] is List &&

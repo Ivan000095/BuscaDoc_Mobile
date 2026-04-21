@@ -1,15 +1,10 @@
-import 'package:bootstrap_icons/bootstrap_icons.dart';
 import 'package:buscadoc_mobile/home.dart';
-
 import 'package:flutter/material.dart';
 import 'package:buscadoc_mobile/theme/tema.dart';
 import 'registro.dart';
 import 'package:buscadoc_mobile/model/usuario.dart';
 import 'package:buscadoc_mobile/utils/ui.dart';
-
-import 'package:magicoon_icons/icon_data/magicoon_regular_icons.dart';
 import 'package:magicoon_icons/magicoon.dart';
-
 
 class InicioSesion extends StatefulWidget {
   const InicioSesion({super.key});
@@ -22,6 +17,7 @@ class _InicioSesionState extends State<InicioSesion> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _estaCargando = false;
+  bool _obscurePassword = true; // Control del ojito de la contraseña
 
   @override
   void dispose() {
@@ -32,45 +28,43 @@ class _InicioSesionState extends State<InicioSesion> {
 
   Future<void> _valida() async {
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
-      UIUtils.showRoundedSnackBar(context, 'Por favor llena todos los campos', MiTema.rojoerror, Colors.white, icono: Icons.warning);
+      UIUtils.showRoundedSnackBar(context, 'Por favor llena todos los campos',
+          MiTema.rojoerror, Colors.white,
+          icono: Icons.warning);
       return;
     }
 
     setState(() => _estaCargando = true);
 
     var respuesta = await Usuario.login(
-      _emailController.text.trim(), 
-      _passwordController.text
-    );
+        _emailController.text.trim(), _passwordController.text);
 
     setState(() => _estaCargando = false);
 
     if (respuesta['success']) {
-      print("Token recibido: ${respuesta['token']}");
       final userData = respuesta['user'];
-      final String userRole = userData['role'];
-      final String userName = userData['name'];
-      final String userFoto = userData['foto'];
-      final String userEmail = userData['email'];
-
       if (mounted) {
-        UIUtils.showRoundedSnackBar(context, 'Sesión iniciada!', MiTema.verde, Colors.white, icono: Icons.check_circle);
+        UIUtils.showRoundedSnackBar(context, '¡Bienvenido de nuevo!',
+            MiTema.verde, Colors.white,
+            icono: MagicoonFilled.checkCircle);
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (context) => VistaInicio(
               title: "BuscaDoc",
-              role: userRole,
-              userName: userName,
-              userFoto: userFoto,
-              userEmail: userEmail,
+              role: userData['role'],
+              userName: userData['name'],
+              userFoto: userData['foto'] ?? '',
+              userEmail: userData['email'],
             ),
           ),
         );
       }
     } else {
       if (mounted) {
-        UIUtils.showRoundedSnackBar(context, respuesta['message'], MiTema.rojoerror, Colors.white, icono: Icons.warning);
+        UIUtils.showRoundedSnackBar(context, respuesta['message'],
+            MiTema.rojoerror, Colors.white,
+            icono: Icons.warning);
       }
     }
   }
@@ -78,271 +72,226 @@ class _InicioSesionState extends State<InicioSesion> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: MiTema.azulOscuro,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.menu),
-          onPressed: () {},
-          color: MiTema.blanco,
-        ),
-      ),
-      backgroundColor: MiTema.gris,
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const SizedBox(height: 80),
-              Image.asset(
-                'assets/logon.png',
-                width: 200,
-                height: 120,
-                fit: BoxFit.contain,
+      backgroundColor: const Color(0xFFF8FAFC), // Un gris azulado muy claro y moderno
+      body: Stack(
+        children: [
+          // Fondo decorativo superior
+          Container(
+            height: MediaQuery.of(context).size.height * 0.4,
+            decoration: BoxDecoration(
+              color: MiTema.azulOscuro,
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(60),
+                bottomRight: Radius.circular(60),
               ),
-              const SizedBox(height: 20),
-              const Text(
-                '"Un lugar para todas tus necesidades"',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF666666),
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-              const SizedBox(height: 50),
-              // Tarjeta de formulario
-              Container(
-                decoration: BoxDecoration(
-                  color: MiTema.blanco,
-                  borderRadius: BorderRadius.circular(30),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                padding: const EdgeInsets.all(24),
+            ),
+          ),
+          
+          SafeArea(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Título
+                    const SizedBox(height: 40),
+                    // Logo con sombra blanca sutil
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 20,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
+                      ),
+                      child: Image.asset(
+                        'assets/logob.png',
+                        width: 180,
+                        height: 100,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                    const SizedBox(height: 15),
                     const Text(
-                      'Iniciar sesión',
-                      textAlign: TextAlign.center,
+                      "Tu salud, en un solo lugar",
                       style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF000000),
+                        color: Colors.white70,
+                        fontSize: 14,
+                        letterSpacing: 1,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const SizedBox(height: 24),
-                    // Campo de correo
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Correo electrónico',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF666666),
+                    const SizedBox(height: 40),
+                    
+                    // Tarjeta Principal
+                    Container(
+                      padding: const EdgeInsets.all(30),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(35),
+                        boxShadow: [
+                          BoxShadow(
+                            color: MiTema.azulOscuro.withOpacity(0.08),
+                            blurRadius: 30,
+                            offset: const Offset(0, 15),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        TextField(
-                          controller: _emailController,
-                          decoration: InputDecoration(
-                            filled: true,
-                            fillColor: MiTema.gris,
-                            prefixIcon: const Icon(MagicoonRegular.envelope, color: Color.fromARGB(255, 11, 13, 78), size: 25),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(50),
-                              borderSide: BorderSide.none,
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 14,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    // Campo de contraseña
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Contraseña',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF666666),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        TextField(
-                          controller: _passwordController,
-                          obscureText: true,
-                          decoration: InputDecoration(
-                            filled: true,
-                            fillColor: MiTema.gris,
-                            prefixIcon: const Icon(MagicoonRegular.lock, color: Color.fromARGB(255, 11, 13, 78), size: 25),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(50),
-                              borderSide: BorderSide.none,
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 14,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: _estaCargando ? null : _valida,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: MiTema.azulOscuro,
-                        disabledBackgroundColor: MiTema.azulOscuro.withOpacity(0.7),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(40),
-                        ),
+                        ],
                       ),
-                      child: _estaCargando
-                          ? const SizedBox(
-                              height: 20, 
-                              width: 20,
-                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
-                            )
-                          : Text(
-                              'Iniciar sesión',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: MiTema.blanco,
-                              ),
-                            ),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            height: 1,
-                            color: Color(0xFFDDDDDD),
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          child: Text(
-                            'O',
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            '¡Hola de nuevo!',
+                            textAlign: TextAlign.center,
                             style: TextStyle(
-                              color: Color(0xFF999999),
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: Container(
-                            height: 1,
-                            color: Color(0xFFDDDDDD),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    // Botones de redes sociales
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        // Botón Google
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () {},
-                            icon: const Icon(BootstrapIcons.google, size: 20),
-                            label: const Text('Google'),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 2),
-                              side: const BorderSide(
-                                color: Color(0xFFDDDDDD),
-                                width: 1,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(200),
-                              ),
-                            ),
-                            iconAlignment: IconAlignment.start,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        // Botón Facebook
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () {},
-                            icon: const Icon(BootstrapIcons.facebook, size: 28),
-                            label: const Text('Facebook'),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 8),
-                              side: const BorderSide(
-                                color: Color(0xFFDDDDDD),
-                                width: 1,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(80),
-                              ),
-                            ),
-                            iconAlignment: IconAlignment.start,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    // Enlace de registro
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text(
-                          '¿Aún no tienes cuenta? ',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF666666),
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const Registro(),
-                              ),
-                            );
-                          },
-                          child: Text(
-                            'Registrarme',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
                               color: MiTema.azulOscuro,
                             ),
                           ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Ingresa tus credenciales para continuar',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.grey, fontSize: 13),
+                          ),
+                          const SizedBox(height: 30),
+                          
+                          // Campo Email
+                          _buildTextField(
+                            label: 'Correo electrónico',
+                            controller: _emailController,
+                            icon: MagicoonRegular.envelope,
+                            keyboardType: TextInputType.emailAddress,
+                          ),
+                          const SizedBox(height: 20),
+                          
+                          // Campo Password
+                          _buildTextField(
+                            label: 'Contraseña',
+                            controller: _passwordController,
+                            icon: MagicoonRegular.lock,
+                            isPassword: true,
+                            obscureText: _obscurePassword,
+                            togglePassword: () {
+                              setState(() => _obscurePassword = !_obscurePassword);
+                            },
+                          ),
+                          
+                          const SizedBox(height: 20),
+
+                          // Botón Login
+                          SizedBox(
+                            height: 55,
+                            child: ElevatedButton(
+                              onPressed: _estaCargando ? null : _valida,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: MiTema.azulOscuro,
+                                foregroundColor: Colors.white,
+                                elevation: 5,
+                                shadowColor: MiTema.azulOscuro.withOpacity(0.4),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(50),
+                                ),
+                              ),
+                              child: _estaCargando
+                                  ? const SizedBox(
+                                      height: 20,
+                                      width: 20,
+                                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                    )
+                                  : const Text(
+                                      'Iniciar Sesión',
+                                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                    ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 40),
+                    
+                    // Footer
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text('¿Aún no tienes cuenta? ', style: TextStyle(color: Colors.grey)),
+                        GestureDetector(
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const Registro())),
+                          child: Text(
+                            'Regístrate aquí',
+                            style: TextStyle(
+                              color: MiTema.azulOscuro,
+                              fontWeight: FontWeight.bold,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
                         ),
                       ],
                     ),
+                    const SizedBox(height: 40),
                   ],
                 ),
               ),
-              const SizedBox(height: 80),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
+
+  // Widget auxiliar para los campos de texto
+  Widget _buildTextField({
+    required String label,
+    required TextEditingController controller,
+    required IconData icon,
+    bool isPassword = false,
+    bool obscureText = false,
+    VoidCallback? togglePassword,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.black54),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: controller,
+          obscureText: obscureText,
+          keyboardType: keyboardType,
+          style: const TextStyle(fontSize: 15),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: const Color(0xFFF1F5F9),
+            prefixIcon: Icon(icon, color: MiTema.azulOscuro, size: 20),
+            suffixIcon: isPassword
+                ? IconButton(
+                    icon: Icon(
+                      obscureText ? Icons.visibility_off : Icons.visibility,
+                      color: Colors.grey,
+                      size: 20,
+                    ),
+                    onPressed: togglePassword,
+                  )
+                : null,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(50),
+              borderSide: BorderSide.none,
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            hintText: label == 'Correo electrónico' ? 'ejemplo@correo.com' : '••••••••',
+            hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+          ),
+        ),
+      ],
+    );
+  }
+
 }
