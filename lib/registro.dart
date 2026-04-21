@@ -28,10 +28,10 @@ class _RegistroState extends State<Registro> {
   final _confirmPasswordController = TextEditingController();
   final _fechaNacimientoController = TextEditingController();
 
-  final _tipoSangreController = TextEditingController();
   final _contactoEmergenciaController = TextEditingController();
   final _alergiasController = TextEditingController();
   final _padecimientosController = TextEditingController();
+  final _habitosController = TextEditingController();
 
   final _cedulaController = TextEditingController();
   final _costoController = TextEditingController();
@@ -46,6 +46,19 @@ class _RegistroState extends State<Registro> {
   final ImagePicker _picker = ImagePicker();
 
   String _rolSeleccionado = 'paciente';
+  
+  // ✅ Variables para dropdowns de paciente
+  String? _generoSeleccionado;
+  String? _tipoSangreSeleccionado;
+  
+  // ✅ Listas de opciones según BD
+  final List<String> _listaGeneros = ['Masculino', 'Femenino'];
+  final List<String> _listaTiposSangre = [
+    'Desconocido', 'O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-',
+  ];
+  
+  // ✅ VALOR FIJO PARA PARENTESCO EN REGISTRO
+  static const String _parentescoPropio = 'Expediente Propio';
   
   LatLng _ubicacionDoctor = const LatLng(16.9060, -92.0934);
   GoogleMapController? _mapController;
@@ -101,10 +114,10 @@ class _RegistroState extends State<Registro> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _fechaNacimientoController.dispose();
-    _tipoSangreController.dispose();
     _contactoEmergenciaController.dispose();
     _alergiasController.dispose();
     _padecimientosController.dispose();
+    _habitosController.dispose();
     _cedulaController.dispose();
     _costoController.dispose();
     _horaEntradaDocController.dispose();
@@ -123,12 +136,31 @@ class _RegistroState extends State<Registro> {
       );
 
       if (imagenSeleccionada != null) {
+        // Validación de tamaño: máximo 5MB
+        final archivo = File(imagenSeleccionada.path);
+        if (archivo.lengthSync() > 5 * 1024 * 1024) {
+          UIUtils.showRoundedSnackBar(
+            context, 
+            'La imagen no debe superar los 5MB', 
+            MiTema.rojoerror, 
+            MiTema.blanco
+          );
+          return;
+        }
         setState(() {
-          _fotoPerfil = File(imagenSeleccionada.path);
+          _fotoPerfil = archivo;
         });
       }
     } catch (e) {
       print("Error al seleccionar foto: $e");
+      if (mounted) {
+        UIUtils.showRoundedSnackBar(
+          context, 
+          'Error al seleccionar la imagen', 
+          MiTema.rojoerror, 
+          MiTema.blanco
+        );
+      }
     }
   }
 
@@ -139,7 +171,7 @@ class _RegistroState extends State<Registro> {
       try {
         fechaInicial = DateTime.parse(_fechaNacimientoController.text);
       } catch (e) {
-        // no me impota
+        // no me importa
       }
     }
 
@@ -211,65 +243,57 @@ class _RegistroState extends State<Registro> {
   }
 
   Future<void> _procesarRegistro() async {
-    if (_rolSeleccionado == 'doctor' && _especialidadIdSeleccionada == null) {
-      UIUtils.showRoundedSnackBar(context, 'Seleccione una especialidad', MiTema.rojoerror, MiTema.blanco);
+    // ... (Tus validaciones existentes: email, password, etc.)
 
-      if (_rolSeleccionado == 'paciente') {
-      if (_fechaNacimientoController.text.isEmpty || 
-          _tipoSangreController.text.isEmpty || 
-          _contactoEmergenciaController.text.isEmpty) {
-        UIUtils.showRoundedSnackBar(context, 'Llena tu fecha de nacimiento, tipo de sangre y contacto de emergencia.', MiTema.rojoerror, MiTema.blanco);
-        return;
-      }
-    }
+    // 1️⃣ Validar campos médicos
+    if (_generoSeleccionado == null || _generoSeleccionado!.isEmpty) {
+      UIUtils.showRoundedSnackBar(context, 'Selecciona tu género', MiTema.rojoerror, MiTema.blanco);
+      return;
     }
 
     setState(() => _estaCargando = true);
 
+    // 2️⃣ Construir el Mapa de Datos
     Map<String, dynamic> datos = {
+      // Datos del Usuario
       "name": _nombreController.text.trim(),
       "email": _emailController.text.trim(),
       "password": _passwordController.text,
       "password_confirmation": _confirmPasswordController.text,
-      "role": _rolSeleccionado,
+      "role": "paciente", // Fijo
       "f_nacimiento": _fechaNacimientoController.text,
-      "latitud": _rolSeleccionado == 'doctor' ? _ubicacionDoctor.latitude : null,
-      "longitud": _rolSeleccionado == 'doctor' ? _ubicacionDoctor.longitude : null,
+      "latitud": _ubicacionDoctor.latitude.toString(), // Si tienes ubicación
+      "longitud": _ubicacionDoctor.longitude.toString(),
+
+      // --- DATOS DEL EXPEDIENTE MÉDICO ---
+      // ✅ IMPORTANTE: Convertir a minúsculas para evitar el error de Postgres
+      "genero": _generoSeleccionado?.toLowerCase(), 
+      
+      "parentesco": "Expediente Propio", // Valor fijo
+      "tipo_sangre": _tipoSangreSeleccionado,
+      "contacto_emergencia": _contactoEmergenciaController.text.trim(),
+      
+      // Campos opcionales (enviar solo si no están vacíos)
+      "alergias": _alergiasController.text.trim().isEmpty ? null : _alergiasController.text.trim(),
+      "padecimientos": _padecimientosController.text.trim().isEmpty ? null : _padecimientosController.text.trim(),
+      "habitos": _habitosController.text.trim().isEmpty ? null : _habitosController.text.trim(),
     };
 
-    if (_rolSeleccionado == 'doctor') {
-      datos["cedula"] = _cedulaController.text.trim();
-      datos["costo"] = _costoController.text.trim();
-      datos["idiomas"] = _idiomasController.text.trim(); 
-      datos["horario_entrada_doc"] = _horaEntradaDocController.text.isNotEmpty 
-        ? _horaEntradaDocController.text 
-        : "08:00:00";
-          
-      datos["horario_salida_doc"] = _horaSalidaDocController.text.isNotEmpty 
-        ? _horaSalidaDocController.text 
-        : "18:00:00";
-      datos["descripcion"] = _descDocController.text.trim();
-      datos["especialidades"] = [_especialidadIdSeleccionada]; 
-    } else if (_rolSeleccionado == 'paciente') {
-      datos["tipo_sangre"] = _tipoSangreController.text.trim();
-      datos["contacto_emergencia"] = _contactoEmergenciaController.text.trim();
-      datos["alergias"] = _alergiasController.text.trim();
-      datos["padecimientos"] = _padecimientosController.text.trim();
-    }
+    // Filtrar nulls (opcional, pero recomendado)
+    datos.removeWhere((key, value) => value == null);
 
+    // 3️⃣ Enviar a la API
     var respuesta = await Usuario.registrar(datos, fotoPerfil: _fotoPerfil);
 
     setState(() => _estaCargando = false);
 
+    // 4️⃣ Manejar respuesta
     if (respuesta['success']) {
-      if (mounted) {
-        UIUtils.showRoundedSnackBar(context, '¡Bienvenido a BuscaDoc!', MiTema.verde, MiTema.blanco);
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => InicioSesion()));
-      }
+      UIUtils.showRoundedSnackBar(context, '¡Registro exitoso! Ahora inicia sesión', MiTema.verde, MiTema.blanco);
+      // Redirigir al Login
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => InicioSesion()));
     } else {
-      if (mounted) {
-        UIUtils.showRoundedSnackBar(context, respuesta['message'], MiTema.rojoerror, MiTema.blanco);
-      }
+      UIUtils.showRoundedSnackBar(context, respuesta['message'], MiTema.rojoerror, MiTema.blanco);
     }
   }
 
@@ -436,7 +460,7 @@ class _RegistroState extends State<Registro> {
                       ),
                       child: _estaCargando 
                           ? const CircularProgressIndicator(color: Colors.white)
-                          : Text(
+                          :  Text(
                               'Registrarme',
                               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: MiTema.blanco, letterSpacing: 1.2),
                             ),
@@ -452,7 +476,7 @@ class _RegistroState extends State<Registro> {
                           onTap: () => Navigator.pushReplacement(
                             context, MaterialPageRoute(builder: (context) => const InicioSesion())
                           ),
-                          child: Text(
+                          child:  Text(
                             'Inicia sesión',
                             style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: MiTema.azulOscuro),
                           ),
@@ -497,16 +521,257 @@ class _RegistroState extends State<Registro> {
     );
   }
 
+  // ✅ Widget reutilizable para dropdowns
+  Widget _buildDropdownField({
+    required String label,
+    required IconData icono,
+    required String? valorActual,
+    required List<String> opciones,
+    required ValueChanged<String?> onChanged,
+    String hintText = 'Seleccionar...',
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 15, bottom: 8),
+            child: Text(
+              label.toUpperCase(),
+              style: const TextStyle(
+                fontSize: 11,
+                color: Color(0xFF666666),
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1,
+              ),
+            ),
+          ),
+          Container(
+            decoration: BoxDecoration(
+              color: MiTema.gris,
+              borderRadius: BorderRadius.circular(50),
+            ),
+            child: DropdownButtonFormField<String>(
+              value: opciones.contains(valorActual) ? valorActual : null,
+              isExpanded: true,
+              icon:  Icon(Icons.arrow_drop_down_circle_outlined, color: MiTema.azulOscuro),
+              decoration: InputDecoration(
+                prefixIcon: Icon(icono, color: MiTema.azulOscuro, size: 20),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                hintText: hintText,
+                hintStyle: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+              ),
+              style: TextStyle(
+                fontSize: 14,
+                color: MiTema.negro,
+                fontWeight: FontWeight.w500,
+              ),
+              dropdownColor: MiTema.blanco,
+              borderRadius: BorderRadius.circular(20),
+              items: opciones.map((opcion) {
+                return DropdownMenuItem<String>(
+                  value: opcion,
+                  child: Text(opcion),
+                );
+              }).toList(),
+              onChanged: onChanged,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ✅ Widget para campos de texto multilínea
+  Widget _buildTextArea({
+    required String label,
+    required String hintText,
+    required TextEditingController controller,
+    IconData? icono,
+    int maxLines = 3,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 15, bottom: 8),
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 11,
+                color: Color(0xFF666666),
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1,
+              ),
+            ),
+          ),
+          Container(
+            decoration: BoxDecoration(
+              color: MiTema.gris,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: TextFormField(
+              controller: controller,
+              maxLines: maxLines,
+              decoration: InputDecoration(
+                prefixIcon: icono != null ? Icon(icono, color: MiTema.azulOscuro, size: 20) : null,
+                filled: true,
+                fillColor: Colors.transparent,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                hintText: hintText,
+                hintStyle: TextStyle(fontSize: 14, color: Colors.grey.shade500),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _formularioPaciente() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('DATOS MÉDICOS BÁSICOS', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
+        const Text(
+          'DATOS MÉDICOS BÁSICOS', 
+          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)
+        ),
         const SizedBox(height: 16),
-        _campoTexto('Tipo de Sangre', _tipoSangreController, icono: BootstrapIcons.droplet),
-        _campoTexto('Contacto Emergencia', _contactoEmergenciaController, icono: BootstrapIcons.telephone, keyboardType: TextInputType.phone),
-        _campoTexto('Alergias', _alergiasController, icono: BootstrapIcons.capsule_pill),
-        _campoTexto('Padecimientos', _padecimientosController, icono: BootstrapIcons.clipboard2_pulse),
+        
+        // ✅ DROPDOWNS EN FILA (Género y Tipo de Sangre)
+        Row(
+          children: [
+            Expanded(
+              child: _buildDropdownField(
+                label: "Género",
+                icono: Icons.person_outline,
+                valorActual: _generoSeleccionado,
+                opciones: _listaGeneros,
+                onChanged: (valor) => setState(() => _generoSeleccionado = valor),
+                hintText: 'Masculino',
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildDropdownField(
+                label: "Tipo de Sangre",
+                icono: Icons.bloodtype_outlined,
+                valorActual: _tipoSangreSeleccionado,
+                opciones: _listaTiposSangre,
+                onChanged: (valor) => setState(() => _tipoSangreSeleccionado = valor),
+                hintText: 'Seleccione el Tipo de Sangre',
+              ),
+            ),
+          ],
+        ),
+        
+        // ✅ CAMPOS DE TEXTO MULTILÍNEA
+        _buildTextArea(
+          label: "Alergias",
+          hintText: "Escriba que alergias tiene",
+          controller: _alergiasController,
+          icono: BootstrapIcons.capsule_pill,
+          maxLines: 2,
+        ),
+        
+        _buildTextArea(
+          label: "Padecimientos Crónicos",
+          hintText: "Diabetes, Hipertensión, etc.",
+          controller: _padecimientosController,
+          icono: BootstrapIcons.clipboard2_pulse,
+          maxLines: 3,
+        ),
+        
+        _buildTextArea(
+          label: "Hábitos de Salud",
+          hintText: "Ej: Ejercicio regular, fumador, etc.",
+          controller: _habitosController,
+          icono: Icons.favorite_outline,
+          maxLines: 3,
+        ),
+        
+        // ✅ CONTACTO DE EMERGENCIA
+        _campoTexto(
+          'Contacto de Emergencia', 
+          _contactoEmergenciaController, 
+          icono: BootstrapIcons.telephone,
+          keyboardType: TextInputType.phone
+        ),
+        
+        // ✅ PARENTESCO - VALOR FIJO (NO EDITABLE)
+        Container(
+          margin: const EdgeInsets.only(top: 10, bottom: 10),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: MiTema.azulOscuro.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: MiTema.azulOscuro.withOpacity(0.3)),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.lock_outline, color: MiTema.azulOscuro, size: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Parentesco',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: MiTema.azulOscuro.withOpacity(0.7),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _parentescoPropio,  // ← Valor fijo mostrado
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: MiTema.azulOscuro,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.check_circle, color: MiTema.verde, size: 18),
+            ],
+          ),
+        ),
+        
+        // ✅ NOTA INFORMATIVA
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.info_outline, color: Colors.grey.shade600, size: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Al registrarse, se creará automáticamente tu expediente médico personal.',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -518,15 +783,15 @@ class _RegistroState extends State<Registro> {
         const Text('DATOS DE TRABAJO', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
         const SizedBox(height: 16),
         
-        // 🔥 AGREGADO: DROPDOWN DE ESPECIALIDADES 🔥
+        // 🔥 DROPDOWN DE ESPECIALIDADES
         Container(
           margin: const EdgeInsets.only(bottom: 16),
           child: DropdownButtonFormField<int>(
             isExpanded: true,
             value: _especialidadIdSeleccionada,
-            icon: Icon(Icons.arrow_drop_down_circle_outlined, color: MiTema.azulOscuro),
+            icon:  Icon(Icons.arrow_drop_down_circle_outlined, color: MiTema.azulOscuro),
             decoration: InputDecoration(
-              prefixIcon: Icon(BootstrapIcons.heart_pulse, color: MiTema.azulOscuro, size: 20),
+              prefixIcon:  Icon(BootstrapIcons.heart_pulse, color: MiTema.azulOscuro, size: 20),
               labelText: "Especialidad",
               labelStyle: TextStyle(color: Colors.grey.shade600, fontSize: 14),
               filled: true,

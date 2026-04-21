@@ -9,7 +9,6 @@ import 'package:buscadoc_mobile/model/especialidad.dart';
 import 'package:buscadoc_mobile/utils/global.dart';
 import 'package:buscadoc_mobile/utils/ui.dart';
 import 'package:buscadoc_mobile/iniciosesion.dart';
-import 'dart:convert' as convert;
 
 class EditarPerfil extends StatefulWidget {
   final String nombreActual;
@@ -28,20 +27,19 @@ class EditarPerfil extends StatefulWidget {
 }
 
 class _EditarPerfilState extends State<EditarPerfil> {
+  // ─────────────────────────────────────────────────────
+  // CONTROLLERS (COMUNES PARA AMBOS ROLES)
+  // ─────────────────────────────────────────────────────
   late TextEditingController _nombreController;
   late TextEditingController _correoController;
-  late TextEditingController _telefonoController;
-  late TextEditingController _tipoSangreController;
-  late TextEditingController _alergiasController;
-  late TextEditingController _cirugiasController;
-  late TextEditingController _padecimientosController;
-  late TextEditingController _habitosController;
-  late TextEditingController _contactoEmergenciaController;
+  
+  // Controllers SOLO para doctor
   late TextEditingController _descripcionController;
   late TextEditingController _cedulaController;
   late TextEditingController _costosController;
   late TextEditingController _horarioEntradaController;
   late TextEditingController _horarioSalidaController;
+  late TextEditingController _idiomasController;
 
   // ─────────────────────────────────────────────────────
   // ESTADO
@@ -49,7 +47,7 @@ class _EditarPerfilState extends State<EditarPerfil> {
   late List<Especialidades> _especialidades = [];
   int? _espIdSeleccionada;
   String _especialidadActual = "";
-  String _roleCache = ''; // ✅ Cache del role para build()
+  String _roleCache = '';
 
   bool _guardando = false;
   bool _cargandoPerfil = true;
@@ -59,42 +57,41 @@ class _EditarPerfilState extends State<EditarPerfil> {
   void initState() {
     super.initState();
     _inicializarControllers();
-    _showData();
+    _cargarDatosPerfil();
   }
 
   void _inicializarControllers() {
+    // Controllers comunes (para ambos roles)
     _nombreController = TextEditingController(text: widget.nombreActual);
     _correoController = TextEditingController(text: widget.correoActual);
-    _telefonoController = TextEditingController();
-    _tipoSangreController = TextEditingController();
-    _alergiasController = TextEditingController();
-    _cirugiasController = TextEditingController();
-    _padecimientosController = TextEditingController();
-    _habitosController = TextEditingController();
-    _contactoEmergenciaController = TextEditingController();
+    
+    // Controllers solo para doctor
     _descripcionController = TextEditingController();
     _cedulaController = TextEditingController();
     _costosController = TextEditingController();
     _horarioEntradaController = TextEditingController();
     _horarioSalidaController = TextEditingController();
+    _idiomasController = TextEditingController();
   }
 
   @override
   void dispose() {
-    _nombreController.dispose(); _correoController.dispose(); _telefonoController.dispose();
-    _tipoSangreController.dispose(); _alergiasController.dispose(); _cirugiasController.dispose();
-    _padecimientosController.dispose(); _habitosController.dispose(); _contactoEmergenciaController.dispose();
-    _descripcionController.dispose(); _cedulaController.dispose(); _costosController.dispose();
-    _horarioEntradaController.dispose(); _horarioSalidaController.dispose();
+    _nombreController.dispose();
+    _correoController.dispose();
+    _descripcionController.dispose();
+    _cedulaController.dispose();
+    _costosController.dispose();
+    _horarioEntradaController.dispose();
+    _horarioSalidaController.dispose();
+    _idiomasController.dispose();
     super.dispose();
   }
 
   // ─────────────────────────────────────────────────────
   // CARGAR DATOS DEL PERFIL
   // ─────────────────────────────────────────────────────
-  Future<void> _showData() async {
+  Future<void> _cargarDatosPerfil() async {
     try {
-      final especialidadesApi = await Especialidades.all();
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
       final idString = prefs.getString('id');
@@ -112,49 +109,17 @@ class _EditarPerfilState extends State<EditarPerfil> {
       if (response['success']) {
         setState(() {
           _datosPerfil = response['data'];
-          _especialidades = especialidadesApi;
           _roleCache = _datosPerfil?['role']?.toString() ?? '';
 
+          // Datos básicos (para ambos roles)
           _nombreController.text = _datosPerfil?['name'] ?? widget.nombreActual;
           _correoController.text = _datosPerfil?['email'] ?? widget.correoActual;
 
-          if (_roleCache == 'paciente') {
-            _tipoSangreController.text = _datosPerfil?['tipo_sangre'] ?? '';
-            _alergiasController.text = _datosPerfil?['alergias'] ?? '';
-            _cirugiasController.text = _datosPerfil?['cirugias'] ?? '';
-            _padecimientosController.text = _datosPerfil?['padecimientos'] ?? '';
-            _habitosController.text = _datosPerfil?['habitos'] ?? '';
-            _contactoEmergenciaController.text = _datosPerfil?['contacto_emergencia'] ?? '';
-          } else if (_roleCache == 'doctor') {
-            _especialidadActual = _datosPerfil?['especialidad'] ?? '';
-            
-            if (_especialidadActual.isNotEmpty && _especialidades.isNotEmpty) {
-              final nombreBuscado = _especialidadActual.split(',').first.trim().toLowerCase();
-              try {
-                final encontrada = _especialidades.firstWhere(
-                  (esp) => esp.nombre.trim().toLowerCase() == nombreBuscado,
-                );
-                _espIdSeleccionada = encontrada.id;
-              } catch (_) {
-                _espIdSeleccionada = null;
-              }
-            }
-
-            _descripcionController.text = _datosPerfil?['descripcion'] ?? '';
-            _cedulaController.text = _datosPerfil?['cedula'] ?? '';
-            
-            // ✅ Leer costo (limpiar símbolos $ y ,)
-            final costoRaw = _datosPerfil?['costo'] ?? _datosPerfil?['costos'] ?? 0;
-            _costosController.text = costoRaw.toString().replaceAll(RegExp(r'[^\d.]'), '');
-            
-            // ✅ Leer horarios con fallback para nombres alternativos
-            _horarioEntradaController.text = _formatoHoraParaMostrar(
-              _datosPerfil?['horario_entrada'] ?? _datosPerfil?['horarioentrada']
-            );
-            _horarioSalidaController.text = _formatoHoraParaMostrar(
-              _datosPerfil?['horario_salida'] ?? _datosPerfil?['horariosalida']
-            );
+          // ✅ SOLO si es doctor, cargar datos profesionales
+          if (_roleCache == 'doctor') {
+            _cargarDatosDoctor();
           }
+
           _cargandoPerfil = false;
         });
       } else {
@@ -162,11 +127,62 @@ class _EditarPerfilState extends State<EditarPerfil> {
         setState(() => _cargandoPerfil = false);
       }
     } catch (e) {
-      print('❌ Error en _showData: $e');
+      print('❌ Error en _cargarDatosPerfil: $e');
       if (mounted) {
         UIUtils.showRoundedSnackBar(context, 'Error al cargar perfil', MiTema.rojoerror, MiTema.blanco);
       }
       setState(() => _cargandoPerfil = false);
+    }
+  }
+
+  // Cargar datos específicos de doctor
+  void _cargarDatosDoctor() {
+    _especialidadActual = _datosPerfil?['especialidad'] ?? '';
+    
+    if (_especialidadActual.isNotEmpty) {
+      // Cargar especialidades si no están cargadas
+      if (_especialidades.isEmpty) {
+        Especialidades.all().then((lista) {
+          if (mounted) {
+            setState(() {
+              _especialidades = lista;
+              _seleccionarEspecialidadGuardada();
+            });
+          }
+        });
+      } else {
+        _seleccionarEspecialidadGuardada();
+      }
+    }
+
+    _descripcionController.text = _datosPerfil?['descripcion'] ?? '';
+    _cedulaController.text = _datosPerfil?['cedula'] ?? '';
+    _idiomasController.text = _datosPerfil?['idiomas'] ?? '';
+    
+    // Leer costo
+    final costoRaw = _datosPerfil?['costo'] ?? _datosPerfil?['costos'] ?? 0;
+    _costosController.text = costoRaw.toString().replaceAll(RegExp(r'[^\d.]'), '');
+    
+    // Leer horarios
+    _horarioEntradaController.text = _formatoHoraParaMostrar(
+      _datosPerfil?['horario_entrada'] ?? _datosPerfil?['horarioentrada']
+    );
+    _horarioSalidaController.text = _formatoHoraParaMostrar(
+      _datosPerfil?['horario_salida'] ?? _datosPerfil?['horariosalida']
+    );
+  }
+
+  void _seleccionarEspecialidadGuardada() {
+    if (_especialidades.isEmpty) return;
+    
+    final nombreBuscado = _especialidadActual.split(',').first.trim().toLowerCase();
+    try {
+      final encontrada = _especialidades.firstWhere(
+        (esp) => esp.nombre.trim().toLowerCase() == nombreBuscado,
+      );
+      _espIdSeleccionada = encontrada.id;
+    } catch (_) {
+      _espIdSeleccionada = null;
     }
   }
 
@@ -186,10 +202,10 @@ class _EditarPerfilState extends State<EditarPerfil> {
   }
 
   // ─────────────────────────────────────────────────────
-  // SELECTOR DE HORA
+  // SELECTOR DE HORA (SOLO PARA DOCTOR)
   // ─────────────────────────────────────────────────────
   Future<void> _selectTime(TextEditingController controller) async {
-    Time initialTime =  Time(hour: 8, minute: 0);
+    Time initialTime = Time(hour: 8, minute: 0);
     
     if (controller.text.isNotEmpty) {
       try {
@@ -228,6 +244,7 @@ class _EditarPerfilState extends State<EditarPerfil> {
   // GUARDAR CAMBIOS
   // ─────────────────────────────────────────────────────
   Future<void> _save() async {
+    // ✅ Validación SOLO para doctor
     if (_roleCache == 'doctor' && _espIdSeleccionada == null) {
       if (mounted) {
         UIUtils.showRoundedSnackBar(context, "Selecciona tu especialidad", MiTema.rojoerror, MiTema.blanco);
@@ -252,23 +269,13 @@ class _EditarPerfilState extends State<EditarPerfil> {
         "email": _correoController.text.trim(),
       };
 
-      if (_roleCache == 'paciente') {
-        datosAEnviar.addAll({
-          "tipo_sangre": _tipoSangreController.text.trim(),
-          "alergias": _alergiasController.text.trim(),
-          "cirugias": _cirugiasController.text.trim(),
-          "padecimientos": _padecimientosController.text.trim(),
-          "habitos": _habitosController.text.trim(),
-          "contacto_emergencia": _contactoEmergenciaController.text.trim(),
-        });
-      } else if (_roleCache == 'doctor') {
-        // ✅ Campos EXACTOS como espera Laravel UserController@update
+      // ✅ Agregar datos profesionales SOLO si es doctor
+      if (_roleCache == 'doctor') {
         datosAEnviar.addAll({
           "costo": _costosController.text.trim().isEmpty 
               ? 0 
               : num.tryParse(_costosController.text.trim()),
           
-          // ✅ Nombres correctos: horario_entrada / horario_salida
           "horario_entrada": _horarioEntradaController.text.isNotEmpty 
               ? _horarioEntradaController.text 
               : "08:00:00",
@@ -278,8 +285,7 @@ class _EditarPerfilState extends State<EditarPerfil> {
           
           "cedula": _cedulaController.text.trim(),
           "descripcion": _descripcionController.text.trim(),
-          
-          // ✅ especialidad_id como int (no array)
+          "idiomas": _idiomasController.text.trim(),
           "especialidad_id": _espIdSeleccionada,
         });
       }
@@ -419,7 +425,7 @@ class _EditarPerfilState extends State<EditarPerfil> {
               ),
               const SizedBox(height: 30),
               
-              // 📋 INFORMACIÓN GENERAL
+              // 📋 INFORMACIÓN GENERAL (COMÚN PARA AMBOS ROLES)
               _buildSectionCard(title: "Información General", icon: Icons.person, children: [
                 _buildTextField(label: "Nombre completo", icono: Icons.person_outline, controller: _nombreController),
                 const SizedBox(height: 15),
@@ -434,8 +440,8 @@ class _EditarPerfilState extends State<EditarPerfil> {
               ]),
               const SizedBox(height: 20),
 
-              // 🏥 SECCIÓN SEGÚN ROL
-              _buildRoleSection(),
+              // 🩺 SECCIÓN CONDICIONAL SEGÚN ROL
+              if (_roleCache == 'doctor') _buildDoctorSection(),
 
               const SizedBox(height: 40),
               
@@ -480,57 +486,64 @@ class _EditarPerfilState extends State<EditarPerfil> {
     );
   }
 
-
-  // ✅ Sección condicional según rol
-  Widget _buildRoleSection() {
-    if (_roleCache == 'paciente') {
-      return _buildSectionCard(title: "Perfil Médico", icon: Icons.monitor_heart_outlined, children: [
-        _buildTextField(label: "Tipo de Sangre", icono: Icons.bloodtype_outlined, controller: _tipoSangreController),
-        const SizedBox(height: 15),
-        _buildTextField(label: "Alergias", icono: Icons.warning_amber_rounded, controller: _alergiasController),
-        const SizedBox(height: 15),
-        _buildTextField(label: "Cirugías", icono: Icons.content_cut, controller: _cirugiasController),
-        const SizedBox(height: 15),
-        _buildTextField(label: "Padecimientos", icono: Icons.sick_outlined, controller: _padecimientosController),
-        const SizedBox(height: 15),
-        _buildTextField(label: "Hábitos", icono: Icons.accessibility_new_rounded, controller: _habitosController),
-        const SizedBox(height: 15),
-        _buildTextField(label: "Contacto de Emergencia", icono: Icons.contact_emergency_outlined, controller: _contactoEmergenciaController, keyboardType: TextInputType.phone),
-      ]);
-    } else if (_roleCache == 'doctor') {
-      return _buildSectionCard(title: "Perfil Profesional", icon: Icons.medical_information_outlined, children: [
-        _buildDropdownFieldEspecialidades(),
-        const SizedBox(height: 15),
-        _buildTextField(label: "Cédula Profesional", icono: Icons.verified_outlined, controller: _cedulaController),
-        const SizedBox(height: 15),
-        _buildTextField(label: "Costo Consulta", icono: Icons.attach_money, controller: _costosController, keyboardType: TextInputType.number),
-        const SizedBox(height: 15),
-        _buildTextField(label: "Descripción", icono: Icons.description_outlined, controller: _descripcionController),
-        const SizedBox(height: 15),
-        Row(children: [
-          Expanded(child: _buildTimeButton("ENTRADA", _horarioEntradaController, () => _selectTime(_horarioEntradaController))),
-          const SizedBox(width: 15),
-          Expanded(child: _buildTimeButton("SALIDA", _horarioSalidaController, () => _selectTime(_horarioSalidaController))),
-        ]),
-      ]);
-    } else {
-      // Fallback si el role no es reconocido
-      return Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.orange.shade50,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.orange.shade200),
-        ),
-        child: Column(children: [
-          Icon(Icons.info_outline, color: Colors.orange, size: 40),
-          const SizedBox(height: 10),
-          Text('Rol no reconocido: "${_roleCache}"', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange.shade900)),
-          const SizedBox(height: 5),
-          Text('Contacta a soporte si este mensaje persiste.', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey.shade700)),
-        ]),
-      );
-    }
+  // ✅ SECCIÓN EXCLUSIVA PARA DOCTOR
+  Widget _buildDoctorSection() {
+    return _buildSectionCard(title: "Perfil Profesional", icon: Icons.medical_information_outlined, children: [
+      
+      // 🎯 Dropdown de Especialidades
+      _buildDropdownFieldEspecialidades(),
+      const SizedBox(height: 15),
+      
+      // 🪪 Cédula Profesional
+      _buildTextField(
+        label: "Cédula Profesional", 
+        icono: Icons.verified_outlined, 
+        controller: _cedulaController,
+        hintText: "Ej: MD-12345-CHI"
+      ),
+      const SizedBox(height: 15),
+      
+      // 💰 Costo por Consulta
+      _buildTextField(
+        label: "Costo Consulta (\$)", 
+        icono: Icons.attach_money, 
+        controller: _costosController, 
+        keyboardType: TextInputType.number,
+        hintText: "Ej: 450"
+      ),
+      const SizedBox(height: 15),
+      
+      // 🌐 Idiomas
+      _buildTextField(
+        label: "Idiomas", 
+        icono: Icons.language_outlined, 
+        controller: _idiomasController,
+        hintText: "Ej: Español, Inglés"
+      ),
+      const SizedBox(height: 15),
+      
+      // 📝 Descripción Profesional
+      _buildTextField(
+        label: "Descripción", 
+        icono: Icons.description_outlined, 
+        controller: _descripcionController,
+        hintText: "Breve descripción de tu experiencia y enfoque",
+        maxLines: 3
+      ),
+      const SizedBox(height: 20),
+      
+      // 🕐 Horarios de Atención
+      const Text(
+        "HORARIO DE ATENCIÓN",
+        style: TextStyle(fontSize: 11, color: Color(0xFF666666), fontWeight: FontWeight.bold, letterSpacing: 1),
+      ),
+      const SizedBox(height: 10),
+      Row(children: [
+        Expanded(child: _buildTimeButton("ENTRADA", _horarioEntradaController, () => _selectTime(_horarioEntradaController))),
+        const SizedBox(width: 15),
+        Expanded(child: _buildTimeButton("SALIDA", _horarioSalidaController, () => _selectTime(_horarioSalidaController))),
+      ]),
+    ]);
   }
 
   // ✅ Botón circular para seleccionar hora
@@ -634,6 +647,8 @@ class _EditarPerfilState extends State<EditarPerfil> {
     TextInputType keyboardType = TextInputType.text,
     bool enabled = true,
     double opacity = 1.0,
+    String? hintText,
+    int maxLines = 1,
   }) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Padding(
@@ -644,6 +659,7 @@ class _EditarPerfilState extends State<EditarPerfil> {
         enabled: enabled,
         controller: controller,
         keyboardType: keyboardType,
+        maxLines: maxLines,
         style: TextStyle(fontSize: 14, color: MiTema.negro.withOpacity(opacity), fontWeight: FontWeight.w500),
         decoration: InputDecoration(
           prefixIcon: Icon(icono, color: MiTema.azulOscuro, size: 20),
@@ -651,6 +667,8 @@ class _EditarPerfilState extends State<EditarPerfil> {
           fillColor: MiTema.gris,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(50), borderSide: BorderSide.none),
           contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          hintText: hintText,
+          hintStyle: TextStyle(fontSize: 14, color: Colors.grey.shade500),
         ),
       ),
     ]);
