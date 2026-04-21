@@ -10,6 +10,7 @@ import 'package:buscadoc_mobile/views/busqueda.dart';
 import 'package:buscadoc_mobile/views/doctor/vistadoctor.dart';
 import 'package:buscadoc_mobile/model/doctores.dart';
 import 'package:get/get.dart';
+import 'package:magicoon_icons/magicoon.dart';
 
 class HomeDashboard extends StatefulWidget {
   final String role;
@@ -453,8 +454,8 @@ class _HomeDashboardState extends State<HomeDashboard> {
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
+          children: const [
+            Text(
               "Nuestras especialidades",
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
@@ -486,7 +487,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.star, color: Colors.amber, size: 16),
+                    const Icon(MagicoonFilled.star, color: Colors.amber, size: 16),
                     const SizedBox(width: 8),
                     Text(
                       esp.nombre,
@@ -537,24 +538,35 @@ class _HomeDashboardState extends State<HomeDashboard> {
                 ),
               ),
               const SizedBox(height: 15),
+              
+              // AUMENTAMOS LA ALTURA A 245 PARA QUE QUEPA EL HORARIO
               SizedBox(
-                height: 210,
+                height: 245, 
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   physics: const BouncingScrollPhysics(),
                   itemCount: doctores.length,
                   itemBuilder: (context, index) {
-                    final doctor = doctores[index];
-                    final docName = doctor['user']?['name']?.toString() ?? 'Doctor';
-                    final docFoto = doctor['user']?['foto'] as String?;
-                    final imgUrl = docFoto != null 
-                        ? '${Globals.webUrl}/storage/$docFoto' 
-                        : '';
+                    final doctorRaw = doctores[index];
+                    
+                    // Mapeamos el doctor desde aquí para sacar todos sus datos limpios
+                    Doctores? docMapeado;
+                    try {
+                      docMapeado = Doctores.fromJson(doctorRaw);
+                    } catch (_) {}
+
+                    final docName = docMapeado?.nombre ?? doctorRaw['user']?['name']?.toString() ?? 'Doctor';
+                    // El modelo ya resuelve el link con Globals.webUrl
+                    final imgUrl = docMapeado?.image ?? ''; 
+                    final bool tieneFoto = imgUrl.isNotEmpty && !imgUrl.contains('placeholder');
+                    
+                    // Lógica del horario
+                    final bool esDescanso = docMapeado?.horarioentrada == 'Descanso' || docMapeado?.horarioentrada == null;
 
                     return Container(
                       width: 150,
                       margin: const EdgeInsets.only(right: 15, bottom: 10),
-                      padding: const EdgeInsets.all(15),
+                      padding: const EdgeInsets.all(12), // Un padding ligeramente menor
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
@@ -570,23 +582,21 @@ class _HomeDashboardState extends State<HomeDashboard> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           CircleAvatar(
-                            radius: 35,
+                            radius: 32,
                             backgroundColor: MiTema.azulOscuro.withOpacity(0.1),
-                            backgroundImage: docFoto != null 
-                                ? NetworkImage(imgUrl) 
-                                : null,
-                            child: docFoto == null
+                            backgroundImage: tieneFoto ? NetworkImage(imgUrl) : null,
+                            child: !tieneFoto
                                 ? Text(
-                                    docName[0].toUpperCase(),
+                                    docName.isNotEmpty ? docName[0].toUpperCase() : 'D',
                                     style: TextStyle(
-                                      fontSize: 24,
+                                      fontSize: 22,
                                       fontWeight: FontWeight.bold,
                                       color: MiTema.azulOscuro,
                                     ),
                                   )
                                 : null,
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 10),
                           Text(
                             docName.startsWith("Dr") ? docName : "Dr. $docName",
                             style: const TextStyle(
@@ -597,7 +607,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 2),
                           Text(
                             esp.nombre,
                             style: const TextStyle(
@@ -607,15 +617,54 @@ class _HomeDashboardState extends State<HomeDashboard> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
+                          
+                          const SizedBox(height: 8),
+
+                          // ==========================================
+                          // NUEVO BLOQUE: HORARIO DE HOY EN MINIATURA
+                          // ==========================================
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: esDescanso ? Colors.red.shade50 : Colors.green.shade50,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  esDescanso ? MagicoonFilled.moon : MagicoonFilled.clock,
+                                  size: 10,
+                                  color: esDescanso ? Colors.red.shade700 : Colors.green.shade700,
+                                ),
+                                const SizedBox(width: 4),
+                                Flexible(
+                                  child: Text(
+                                    esDescanso
+                                        ? 'Hoy no atiende'
+                                        : '${docMapeado!.horarioentrada} - ${docMapeado.horariosalida}',
+                                    style: TextStyle(
+                                      fontSize: 9, // Letra pequeñita para que quepa bien
+                                      fontWeight: FontWeight.bold,
+                                      color: esDescanso ? Colors.red.shade700 : Colors.green.shade700,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
                           const Spacer(),
                           SizedBox(
                             width: double.infinity,
                             child: OutlinedButton(
                               onPressed: () {
-                                try {
-                                  final docMapeado = Doctores.fromJson(doctor);
-                                  Get.to(() => DoctorDetailsView(doctor: docMapeado));
-                                } catch (_) {}
+                                if (docMapeado != null) {
+                                  Get.to(() => DoctorDetailsView(doctor: docMapeado!));
+                                }
                               },
                               style: OutlinedButton.styleFrom(
                                 side: BorderSide(color: MiTema.azulOscuro),
@@ -651,11 +700,10 @@ class _HomeDashboardState extends State<HomeDashboard> {
             child: TextButton.icon(
               onPressed: () {
                 setState(() {
-                  // Agregamos 2 especialidades más a la vista
                   _limiteEspecialidades += 2; 
                 });
               },
-              icon: Icon(Icons.keyboard_arrow_down, color: MiTema.azulOscuro),
+              icon: Icon(MagicoonRegular.angleDown, color: MiTema.azulOscuro),
               label: Text(
                 "Mostrar más especialidades",
                 style: TextStyle(
