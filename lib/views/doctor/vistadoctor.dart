@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:buscadoc_mobile/model/doctores.dart';
 import 'package:buscadoc_mobile/theme/tema.dart';
 import 'package:buscadoc_mobile/utils/url_helper.dart';
-import 'package:buscadoc_mobile/views/doctor/citas.dart';
+import 'package:buscadoc_mobile/views/doctor/agendar_cita.dart';
 import 'package:magicoon_icons/magicoon.dart';
 import 'package:buscadoc_mobile/views/chat/vista_chat.dart';
 import 'package:buscadoc_mobile/model/contactos.dart';
@@ -11,6 +11,7 @@ import 'package:buscadoc_mobile/services/comment_service.dart';
 import 'package:buscadoc_mobile/views/comments/comment_dialog.dart';
 import 'package:buscadoc_mobile/views/comments/replies_view.dart';
 import 'package:buscadoc_mobile/utils/global.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class DoctorDetailsView extends StatefulWidget {
   final Doctores doctor;
@@ -22,51 +23,56 @@ class DoctorDetailsView extends StatefulWidget {
 }
 
 class _DoctorDetailsViewState extends State<DoctorDetailsView> {
+  
+  // Función para abrir Google Maps con coordenadas reales
+  Future<void> _abrirMapa() async {
+    if (widget.doctor.latitud != null && widget.doctor.longitud != null) {
+      final String googleMapsUrl = "https://www.google.com/maps/search/?api=1&query=${widget.doctor.latitud},${widget.doctor.longitud}";
+      final Uri url = Uri.parse(googleMapsUrl);
+      if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+        Get.snackbar("Error", "No se pudo abrir el mapa", backgroundColor: Colors.white);
+      }
+    } else {
+      Get.snackbar("Ubicación no disponible", "El doctor no cuenta con coordenadas.", backgroundColor: Colors.white);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final doctor = widget.doctor;
     
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: const Color(0xFFF5F7F9),
       body: Stack(
         children: [
           CustomScrollView(
+            physics: const BouncingScrollPhysics(),
             slivers: [
+              // APPBAR CON IMAGEN
               SliverAppBar(
                 expandedHeight: 320,
                 pinned: true,
+                elevation: 0,
                 backgroundColor: MiTema.azulOscuro,
-                leading: IconButton(
-                  icon: const Icon(MagicoonFilled.angleLeft, color: Colors.white),
-                  onPressed: () => Get.back(),
+                leading: Container(
+                  margin: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(color: Colors.black.withOpacity(0.3), shape: BoxShape.circle),
+                  child: IconButton(
+                    icon: const Icon(MagicoonFilled.angleLeft, color: Colors.white, size: 20),
+                    onPressed: () => Get.back(),
+                  ),
                 ),
                 flexibleSpace: FlexibleSpaceBar(
                   background: Stack(
                     fit: StackFit.expand,
                     children: [
-                      Image.network(
-                        doctor.image,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => Container(
-                          color: Colors.grey[300],
-                          child: Icon(Icons.person, size: 100, color: Colors.grey[600]),
-                        ),
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        child: Container(
-                          height: 100,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.bottomCenter,
-                              end: Alignment.topCenter,
-                              colors: [
-                                Colors.black.withOpacity(0.8),
-                                Colors.transparent,
-                              ],
-                            ),
+                      Image.network(doctor.image, fit: BoxFit.cover),
+                      const DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Colors.transparent, Colors.black45],
                           ),
                         ),
                       ),
@@ -75,20 +81,21 @@ class _DoctorDetailsViewState extends State<DoctorDetailsView> {
                 ),
               ),
 
+              // CONTENIDO
               SliverToBoxAdapter(
                 child: Container(
-                  transform: Matrix4.translationValues(0, -25, 0),
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  transform: Matrix4.translationValues(0, -35, 0),
+                  padding: const EdgeInsets.all(20),
                   decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+                    color: Color(0xFFF5F7F9),
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(40)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 30),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      
+                      Row(   
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Expanded(
@@ -97,20 +104,12 @@ class _DoctorDetailsViewState extends State<DoctorDetailsView> {
                               children: [
                                 Text(
                                   doctor.nombre.startsWith("Dr") ? doctor.nombre : "Dr. ${doctor.nombre}",
-                                  style: TextStyle(
-                                    fontSize: 26,
-                                    fontWeight: FontWeight.bold,
-                                    color: MiTema.azulOscuro,
-                                  ),
+                                  style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: MiTema.azulOscuro, letterSpacing: -0.5),
                                 ),
-                                const SizedBox(height: 5),
+                                const SizedBox(height: 4),
                                 Text(
                                   doctor.especialidad,
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.grey[600],
-                                    fontWeight: FontWeight.w500,
-                                  ),
+                                  style: TextStyle(fontSize: 16, color: Colors.grey.shade500, fontWeight: FontWeight.w600),
                                 ),
                               ],
                             ),
@@ -119,117 +118,64 @@ class _DoctorDetailsViewState extends State<DoctorDetailsView> {
                         ],
                       ),
                       
-                      const SizedBox(height: 35),
+                      const SizedBox(height: 25),
 
+                      // BOTONES DE ACCIÓN RÁPIDA
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          _buildContactItem(
-                            icon: MagicoonFilled.map,
-                            label: 'Ubicación',
-                            onTap: () => Get.snackbar('Mapa', 'Abriendo ubicación...'),
-                          ),
-                          _buildContactItem(
-                            icon: MagicoonFilled.phone,
-                            label: 'Teléfono',
-                            onTap: () {
-                              if (doctor.telefono.isNotEmpty) {
-                                UrlHelper.makePhoneCall(doctor.telefono);
-                              } else {
-                                Get.snackbar('Sin teléfono', 'El doctor no tiene número registrado.');
-                              }
-                            },
-                          ),
-                          _buildContactItem(
-                            icon: MagicoonFilled.clock,
-                            label: 'Horarios',
-                            onTap: () {
-                              Get.dialog(
-                                AlertDialog(
-                                  title: const Text('Horario de Atención'),
-                                  content: Text(
-                                    '${doctor.horarioentrada}:00 - ${doctor.horariosalida}:00 hrs',
-                                    style: const TextStyle(fontSize: 18),
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () => Get.back(),
-                                      child: const Text('Cerrar'),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
+                          _buildQuickAction(MagicoonFilled.map, "Mapa", Colors.blue, _abrirMapa),
+                          _buildQuickAction(MagicoonFilled.phone, "Llamar", Colors.green, () {
+                             if (doctor.telefono.isNotEmpty) UrlHelper.makePhoneCall(doctor.telefono);
+                          }),
+                          _buildQuickAction(MagicoonFilled.chat, "Mensaje", Colors.orange, () {
+                             Get.to(() => VistaChatView(contacto: ContactoChat(
+                                id: doctor.idUsuario.toString(),
+                                rol: doctor.rol,
+                                nombre: doctor.nombre,
+                                fotoUrl: doctor.image,
+                                especialidad: doctor.especialidad,
+                             )));
+                          }),
                         ],
                       ),
 
                       const SizedBox(height: 35),
 
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: () {
-                                ContactoChat contactoTemporal = ContactoChat(
-                                  id: doctor.idUsuario.toString(),
-                                  rol: doctor.rol,
-                                  nombre: doctor.nombre,
-                                  fotoUrl: doctor.image,
-                                  especialidad: doctor.especialidad,
-                                );
-
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => VistaChatView(contacto: contactoTemporal),
-                                  ),
-                                );
-                              },
-                              icon: const Icon(MagicoonRegular.calendar, size: 20),
-                              label: const Text('Agendar Cita', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: MiTema.azulOscuro,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                                elevation: 0,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 15),
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: () {
-                                Get.snackbar('Reseñar', 'Función próximamente...');
-                              },
-                              icon: const Icon(MagicoonRegular.chatDots, size: 20),
-                              label: const Text('Mensaje', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
-                              style: OutlinedButton.styleFrom(
-                                side: BorderSide(color: MiTema.azulOscuro, width: 2),
-                                foregroundColor: MiTema.azulOscuro,
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 40),
-                      const Text(
-                        'Acerca del doctor',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
-                      ),
-                      const SizedBox(height: 15),
+                      // ACERCA DE
+                      const Text('Acerca del doctor', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+                      const SizedBox(height: 12),
                       Text(
-                        doctor.descripcion.isNotEmpty ? doctor.descripcion : "Este doctor aún no tiene una descripción detallada.",
-                        style: TextStyle(fontSize: 15, color: Colors.grey[700], height: 1.6),
+                        doctor.descripcion.isNotEmpty ? doctor.descripcion : "Especialista médico altamente calificado en Ocosingo, Chiapas.",
+                        style: TextStyle(fontSize: 15, color: Colors.grey.shade700, height: 1.6),
+                      ),
+
+                      const SizedBox(height: 35),
+
+                      // TABLA DE HORARIOS (NATIVO EN VISTA)
+                      const Text('Horario de atención', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+                      const SizedBox(height: 15),
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(25),
+                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 15)],
+                        ),
+                        child: Column(
+                          children: [
+                            _buildScheduleRow("Lunes - Viernes", "${doctor.horarioentrada} - ${doctor.horariosalida} hrs"),
+                            const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Divider(color: Color(0xFFF0F0F0))),
+                            _buildScheduleRow("Sábados", "09:00 - 14:00 hrs"),
+                            const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Divider(color: Color(0xFFF0F0F0))),
+                            _buildScheduleRow("Domingos", "Cerrado", isClosed: true),
+                          ],
+                        ),
                       ),
 
                       const SizedBox(height: 40),
                       _buildReviewsSection(context, doctor.idUsuario),
-                      const SizedBox(height: 80),
+                      const SizedBox(height: 120), // Padding para el botón fijo
                     ],
                   ),
                 ),
@@ -237,22 +183,25 @@ class _DoctorDetailsViewState extends State<DoctorDetailsView> {
             ],
           ),
 
+          // BOTÓN PRINCIPAL
           Positioned(
-            bottom: 20,
-            left: 20,
-            right: 20,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: MiTema.azulOscuro,
-                padding: const EdgeInsets.symmetric(vertical: 18),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
-                elevation: 8,
-                shadowColor: MiTema.azulOscuro.withOpacity(0.5),
+            bottom: 25, left: 20, right: 20,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(colors: [MiTema.azulOscuro, const Color(0xFF1E3A8A)]),
+                borderRadius: BorderRadius.circular(50),
+                boxShadow: [BoxShadow(color: MiTema.azulOscuro.withOpacity(0.4), blurRadius: 15, offset: const Offset(0, 8))],
               ),
-              onPressed: () => Get.to(() => AgendarCitaPage(doctor: doctor)),
-              child: const Text(
-                "AGENDAR CITA",
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 1),
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  shadowColor: Colors.transparent,
+                  padding: const EdgeInsets.symmetric(vertical: 18),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+                ),
+                onPressed: () => Get.to(() => AgendarCitaPage(doctor: doctor)),
+                icon: const Icon(MagicoonFilled.calendar, color: Colors.white, size: 20),
+                label: const Text("AGENDAR CITA AHORA", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 1, fontSize: 15)),
               ),
             ),
           ),
@@ -261,45 +210,64 @@ class _DoctorDetailsViewState extends State<DoctorDetailsView> {
     );
   }
 
-  Widget _buildContactItem({required IconData icon, required String label, required VoidCallback onTap}) {
+  Widget _buildQuickAction(IconData icon, String label, Color color, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: MiTema.azulOscuro.withOpacity(0.08),
-              shape: BoxShape.circle,
+      child: Container(
+        width: Get.width * 0.28,
+        padding: const EdgeInsets.symmetric(vertical: 18),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(25),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
+              child: Icon(icon, color: color, size: 24),
             ),
-            child: Icon(icon, color: MiTema.azulOscuro, size: 26),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: TextStyle(fontSize: 13, color: Colors.grey[800], fontWeight: FontWeight.w600),
-          ),
-        ],
+            const SizedBox(height: 8),
+            Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black87)),
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget _buildScheduleRow(String day, String hour, {bool isClosed = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
+          children: [
+            Icon(MagicoonRegular.clock, size: 16, color: isClosed ? Colors.grey : MiTema.azulOscuro),
+            const SizedBox(width: 10),
+            Text(day, style: TextStyle(color: Colors.grey.shade700, fontWeight: FontWeight.w600, fontSize: 14)),
+          ],
+        ),
+        Text(
+          hour, 
+          style: TextStyle(color: isClosed ? Colors.red.shade400 : MiTema.azulOscuro, fontWeight: FontWeight.bold, fontSize: 14)
+        ),
+      ],
     );
   }
 
   Widget _buildRating(double promedio) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.amber.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.amber.shade300),
+        color: const Color(0xFFFFF9E7),
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: Colors.amber.shade200, width: 1.5),
       ),
       child: Row(
         children: [
-          Text(
-            promedio > 0 ? promedio.toStringAsFixed(1) : "0.0",
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87),
-          ),
-          const SizedBox(width: 4),
-          const Icon(MagicoonFilled.star, color: Colors.amber, size: 18),
+          Icon(MagicoonFilled.star, color: Colors.amber.shade700, size: 18),
+          const SizedBox(width: 6),
+          Text(promedio.toStringAsFixed(1), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.black87)),
         ],
       ),
     );

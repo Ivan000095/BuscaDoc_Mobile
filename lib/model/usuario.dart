@@ -88,6 +88,7 @@ class Usuario {
       if (response.statusCode == 200 && jsonResponse['success'] == true) {
         final userData = jsonResponse['data']['user'];
         await _guardarSesion(userData, jsonResponse['data']['token']);
+        Globals.fotoPerfilActual = userData['foto'];
         
         return {
           'success': true,
@@ -305,5 +306,11 @@ class Usuario {
       'message': 'Error de conexión. Verifica tu internet o que el servidor esté activo.',
       'debug': error.toString(), // Solo para desarrollo, remover en producción
     };
+  }
+
+  static Future<void> inicializarFotoGlobal() async {
+    final prefs = await SharedPreferences.getInstance();
+    String? foto = prefs.getString('userFoto');
+    Globals.fotoPerfilActual = (foto != null && foto.isNotEmpty) ? foto : null;
   }
 }

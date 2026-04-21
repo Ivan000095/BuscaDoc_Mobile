@@ -87,4 +87,12 @@ class CitasController extends GetxController {
     Get.back();
     _handleResponse(response, onSuccess: () => fetchCitas());
   }
+
+  Future<void> reagendarLibre(int citaId, String fecha, String hora) async {
+    isActionLoading(true);
+    var response = await CitasProvider.reagendarLibre(citaId, fecha, hora);
+    
+    Get.back(); // Cerrar el bottom sheet
+    _handleResponse(response, onSuccess: () => fetchCitas());
+  }
 }

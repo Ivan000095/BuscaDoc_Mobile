@@ -64,13 +64,26 @@ class CitasProvider {
   }
 
   static Future<Map<String, dynamic>> getDisponibilidad(int doctorId, String fecha) async {
+    // 1. Obtenemos el token (es mejor enviarlo siempre por seguridad)
+    String? token = await Usuario.obtenerToken(); 
+    
     try {
       var response = await http.get(
         Uri.parse('${Globals.webUrl}/api/disponibilidad/$doctorId?fecha=$fecha'),
-        headers: {"Accept": "application/json"},
+        headers: {
+          "Accept": "application/json",
+          if (token != null) "Authorization": "Bearer $token" // Se envía si existe
+        },
       );
+
+      // 2. IMPRIMIMOS LA RESPUESTA PARA VER EL ERROR REAL
+      print("==== RESPUESTA DE HORARIOS DESDE LARAVEL ====");
+      print(response.body); 
+      print("=============================================");
+
       return jsonDecode(response.body);
     } catch (e) {
+      print("ERROR EN EL CATCH DE FLUTTER: $e");
       return {'slots': [], 'mensaje': 'Error de conexión'};
     }
   }
@@ -85,6 +98,23 @@ class CitasProvider {
           'nueva_fecha': fecha,
           'nueva_hora': hora,
           'motivo': motivo,
+        },
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Error de conexión'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> reagendarLibre(int citaId, String fecha, String hora) async {
+    String? token = await Usuario.obtenerToken();
+    try {
+      var response = await http.put(
+        Uri.parse('${Globals.webUrl}/api/citas/$citaId/reprogramar-libre'),
+        headers: {"Accept": "application/json", "Authorization": "Bearer $token"},
+        body: {
+          'nueva_fecha': fecha,
+          'nueva_hora': hora,
         },
       );
       return jsonDecode(response.body);
