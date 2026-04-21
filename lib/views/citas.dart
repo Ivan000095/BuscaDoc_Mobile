@@ -4,272 +4,610 @@ import 'package:intl/intl.dart';
 import 'package:buscadoc_mobile/theme/tema.dart';
 import 'package:buscadoc_mobile/utils/global.dart';
 import 'package:buscadoc_mobile/model/citas_controller.dart';
-import 'package:bootstrap_icons/bootstrap_icons.dart';
-
-
+import 'package:magicoon_icons/magicoon.dart';
 class MisCitasView extends StatelessWidget {
   final String role;
-  
   // Inyectamos el controlador
   final CitasController controller = Get.put(CitasController());
-
   MisCitasView({super.key, required this.role});
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7F9),
       appBar: AppBar(
-        title: const Text("Mis Citas Médicas", style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
+        title: const Text(
+          "Mis Citas Médicas",
+          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black87),
       ),
       body: Obx(() {
         if (controller.isLoading.value) {
-          return Center(child: CircularProgressIndicator(color: MiTema.azulOscuro));
+          return Center(
+            child: CircularProgressIndicator(color: MiTema.azulOscuro),
+          );
         }
-
         if (controller.citasList.isEmpty) {
           return _buildEmptyState();
         }
-
+        // ==========================================
+        // 1. LÓGICA DE AGRUPACIÓN Y SEPARACIÓN
+        // ==========================================
+        DateTime hoy = DateTime.now();
+        DateTime hoyDate = DateTime(hoy.year, hoy.month, hoy.day);
+        List<dynamic> activas = [];
+        List<dynamic> historial = [];
+        for (var cita in controller.citasList) {
+          // Extraemos la fecha limpia para evitar el error de la "T" y la "Z"
+          String fechaLimpia = cita['fecha'].toString().split('T')[0];
+          DateTime dateOnly = DateTime.parse(fechaLimpia);
+          String estado = cita['estado'] ?? 'pendiente';
+          bool isFinal = ['finalizada', 'no asistida', 'cancelada', 'rechazada'].contains(estado);
+          if (isFinal || dateOnly.isBefore(hoyDate)) {
+            historial.add(cita);
+          } else {
+            activas.add(cita);
+          }
+        }
+        // Ordenar historial de más reciente a más antiguo (Corrección aplicada)
+        historial.sort((a, b) {
+          String soloFechaA = a['fecha'].toString().split('T')[0];
+          String soloFechaB = b['fecha'].toString().split('T')[0];
+          DateTime dtA = DateTime.parse("$soloFechaA ${a['hora_inicio']}");
+          DateTime dtB = DateTime.parse("$soloFechaB ${b['hora_inicio']}");
+          return dtB.compareTo(dtA);
+        });
+        // Agrupar activas por fecha
+        Map<String, List<dynamic>> activasGrouped = {};
+        for (var cita in activas) {
+          String dateKey = cita['fecha'].toString().split('T')[0];
+          activasGrouped.putIfAbsent(dateKey, () => []).add(cita);
+        }
+        var sortedKeys = activasGrouped.keys.toList()..sort();
+        // ==========================================
+        // 2. CONSTRUCCIÓN DE LA LISTA DE WIDGETS
+        // ==========================================
+        List<Widget> listItems = [];
+        // --- AGENDA ACTIVA ---
+        if (sortedKeys.isNotEmpty) {
+          for (var dateStr in sortedKeys) {
+            listItems.add(_buildDateHeader(dateStr));
+            for (var cita in activasGrouped[dateStr]!) {
+              listItems.add(_buildCitaCard(context, cita, isHistorial: false));
+            }
+          }
+        }
+        // --- HISTORIAL ---
+        if (historial.isNotEmpty) {
+          listItems.add(_buildHistorialHeader());
+          for (var cita in historial) {
+            listItems.add(_buildCitaCard(context, cita, isHistorial: true));
+          }
+        }
         return Stack(
           children: [
             RefreshIndicator(
               color: MiTema.azulOscuro,
               onRefresh: () => controller.fetchCitas(),
-              child: ListView.builder(
-                padding: const EdgeInsets.all(15),
-                itemCount: controller.citasList.length,
-                itemBuilder: (context, index) {
-                  return _buildCitaCard(context, controller.citasList[index]);
-                },
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.only(
+                  top: 15,
+                  left: 15,
+                  right: 15,
+                  bottom: 100, 
+                ),
+                children: listItems,
               ),
             ),
-            
-            // Overlay de carga si se está cancelando/aceptando algo
             if (controller.isActionLoading.value)
               Container(
                 color: Colors.black.withOpacity(0.3),
-                child: Center(child: CircularProgressIndicator(color: MiTema.azulOscuro)),
-              )
+                child: Center(
+                  child: CircularProgressIndicator(color: MiTema.azulOscuro),
+                ),
+              ),
           ],
         );
       }),
     );
   }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+  // ==========================================
+  // WIDGETS DE ENCABEZADOS
+  // ==========================================
+  Widget _buildDateHeader(String dateStr) {
+    DateTime date = DateTime.parse(dateStr);
+    DateTime hoy = DateTime.now();
+    DateTime hoyDate = DateTime(hoy.year, hoy.month, hoy.day);
+    DateTime mananaDate = hoyDate.add(const Duration(days: 1));
+    DateTime targetDate = DateTime(date.year, date.month, date.day);
+    String etiquetaDia;
+    Color colorEtiqueta;
+    if (targetDate.isAtSameMomentAs(hoyDate)) {
+      etiquetaDia = 'Hoy';
+      colorEtiqueta = Colors.blue.shade700;
+    } else if (targetDate.isAtSameMomentAs(mananaDate)) {
+      etiquetaDia = 'Mañana';
+      colorEtiqueta = Colors.cyan.shade700;
+    } else {
+      etiquetaDia = DateFormat('EEEE', 'es_ES').format(date);
+      etiquetaDia = etiquetaDia[0].toUpperCase() + etiquetaDia.substring(1);
+      colorEtiqueta = MiTema.azulOscuro;
+    }
+    String fechaCompleta = DateFormat('d \'de\' MMMM', 'es_ES').format(date);
+    return Padding(
+      padding: const EdgeInsets.only(top: 20, bottom: 15),
+      child: Row(
         children: [
-          Icon(Icons.calendar_today_rounded, size: 80, color: Colors.grey.shade300),
-          const SizedBox(height: 20),
-          const Text("No tienes citas registradas.", style: TextStyle(color: Colors.grey, fontSize: 16)),
+          Text(
+            etiquetaDia,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: colorEtiqueta,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            fechaCompleta,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey.shade600,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(width: 15),
+          Expanded(
+            child: Divider(color: Colors.grey.shade300, thickness: 1),
+          ),
+        ],
+      ),
+    );
+  }
+  Widget _buildHistorialHeader() {
+    return Padding(
+      padding: const EdgeInsets.only(top: 35, bottom: 20),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade200,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: Row(
+              children: [
+                Icon(MagicoonRegular.clock, size: 14, color: Colors.grey.shade700),
+                const SizedBox(width: 6),
+                Text(
+                  "HISTORIAL DE CONSULTAS",
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 15),
+          Expanded(
+            child: Divider(color: Colors.grey.shade300, thickness: 1),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildCitaCard(BuildContext context, Map<String, dynamic> cita) {
-    DateTime fecha = DateTime.parse(cita['fecha']);
-    String mes = DateFormat('MMM', 'es_ES').format(fecha).toUpperCase();
-    String diaNum = DateFormat('dd').format(fecha);
-    String diaAbrev = DateFormat('E', 'es_ES').format(fecha);
-    
+
+  Widget _buildCitaCard(BuildContext context, Map<String, dynamic> cita, {required bool isHistorial}) {
+    DateTime dtHora = DateFormat("HH:mm:ss").parse(cita['hora_inicio']);
+    String amPm = DateFormat('a').format(dtHora);
+    String horaStr = DateFormat('hh:mm').format(dtHora);
+
     String nombreMostrar = '';
-    
+    String? fotoMostrar;
+    String subtitleMostrar = '';
+    String infoExtra = ''; 
+
     if (role == 'doctor') {
-      if (cita['expediente'] != null && cita['expediente']['nombre_completo'] != null) {
-        nombreMostrar = cita['expediente']['nombre_completo'];
-      } else {
-        nombreMostrar = 'Paciente';
+      var exp = cita['expediente'];
+      nombreMostrar = exp?['nombre_completo'] ?? 'Paciente no registrado';
+      fotoMostrar = exp?['user']?['foto']; 
+      String parentesco = exp?['parentesco'] ?? 'Paciente';
+      subtitleMostrar = parentesco == 'Yo mismo' ? 'Paciente de plataforma' : parentesco;
+      
+      if (exp != null && exp['fecha_nacimiento'] != null) {
+        DateTime dob = DateTime.parse(exp['fecha_nacimiento']);
+        int age = DateTime.now().year - dob.year;
+        String genero = exp['genero'] ?? '';
+        genero = genero.isNotEmpty ? genero[0].toUpperCase() + genero.substring(1) : '';
+        infoExtra = "$age años • $genero";
       }
     } else {
-      String docName = '';
-      if (cita['doctor'] != null && cita['doctor']['user'] != null) {
-        docName = cita['doctor']['user']['name'] ?? '';
-      }
+      String docName = cita['doctor']?['user']?['name'] ?? '';
       nombreMostrar = "Dr. $docName";
+      fotoMostrar = cita['doctor']?['user']?['foto'];
+      subtitleMostrar = cita['doctor']?['especialidades']?[0]?['nombre'] ?? 'Especialista';
     }
-        
-    String? fotoMostrar = role == 'doctor' ? null : cita['doctor']?['user']?['foto'];
-    String subtitleMostrar = role == 'doctor' ? 'Paciente' : cita['doctor']?['especialidades']?[0]?['nombre'] ?? 'Especialista';
+
+    Color blockColor = MiTema.azulOscuro; // Mantenemos tu azul original
 
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white, // 1. Fondo SIEMPRE blanco y sólido para bloquear la sombra
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
+        border: isHistorial ? Border.all(color: Colors.grey.shade200) : null,
+        // 2. Si es historial, quitamos la sombra para que se vea plana en el fondo
+        boxShadow: isHistorial ? [] : [
+          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 15, offset: const Offset(0, 5)),
+        ],
       ),
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // TICKET FECHA (Azul Navy)
-            Container(
-              width: 80,
-              decoration: BoxDecoration(
-                color: MiTema.azulOscuro,
-                borderRadius: const BorderRadius.horizontal(left: Radius.circular(20)),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(mes, style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
-                  Text(diaNum, style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold)),
-                  Text(diaAbrev, style: const TextStyle(color: Colors.white70, fontSize: 12)),
-                ],
-              ),
-            ),
-            
-            // INFORMACIÓN Y ACCIONES
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(15.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+      // 3. LA MAGIA: Aplicamos opacidad y filtro B/N solo a los "hijos" de la tarjeta
+      child: Opacity(
+        opacity: isHistorial ? 0.6 : 1.0, // Foco visual apagado
+        child: ColorFiltered(
+          colorFilter: isHistorial 
+              // Matriz fotográfica que convierte todo a escala de grises
+              ? const ColorFilter.matrix([
+                  0.2126, 0.7152, 0.0722, 0, 0,
+                  0.2126, 0.7152, 0.0722, 0, 0,
+                  0.2126, 0.7152, 0.0722, 0, 0,
+                  0,      0,      0,      1, 0,
+                ])
+              : const ColorFilter.mode(Colors.transparent, BlendMode.multiply),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // TICKET HORA
+                Container(
+                  width: 85,
+                  decoration: BoxDecoration(
+                    color: blockColor,
+                    borderRadius: const BorderRadius.horizontal(left: Radius.circular(20)),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(amPm, style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1)),
+                      Text(horaStr, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                      const Text("Hora", style: TextStyle(color: Colors.white70, fontSize: 11)),
+                    ],
+                  ),
+                ),
+
+                // INFORMACIÓN Y ESTADOS
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(15.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        CircleAvatar(
-                          backgroundColor: MiTema.azulOscuro.withOpacity(0.1),
-                          backgroundImage: fotoMostrar != null ? NetworkImage('${Globals.webUrl}/storage/$fotoMostrar') : null,
-                          child: fotoMostrar == null ? Icon(BootstrapIcons.person_fill, color: MiTema.azulOscuro) : null,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 25,
+                              backgroundColor: blockColor.withOpacity(0.1),
+                              backgroundImage: fotoMostrar != null ? NetworkImage('${Globals.webUrl}/storage/$fotoMostrar') : null,
+                              child: fotoMostrar == null
+                                  ? Icon(role == 'doctor' ? MagicoonFilled.user : MagicoonFilled.stethoscope, color: blockColor)
+                                  : null,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Icon(BootstrapIcons.clock_fill, size: 12, color: MiTema.azulOscuro),
-                                  const SizedBox(width: 4),
-                                  Text(cita['hora_inicio'].substring(0, 5), style: TextStyle(color: MiTema.azulOscuro, fontWeight: FontWeight.bold, fontSize: 13)),
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        role == 'doctor' ? MagicoonFilled.folder : MagicoonFilled.stethoscope,
+                                        size: 12,
+                                        color: blockColor,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Expanded(
+                                        child: Text(
+                                          subtitleMostrar,
+                                          style: TextStyle(color: blockColor, fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 0.5),
+                                          maxLines: 1, overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    nombreMostrar,
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87),
+                                    maxLines: 1, overflow: TextOverflow.ellipsis,
+                                  ),
+                                  if (infoExtra.isNotEmpty)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 2),
+                                      child: Text(infoExtra, style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                                    ),
                                 ],
                               ),
-                              Text(nombreMostrar, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15), maxLines: 1, overflow: TextOverflow.ellipsis),
-                              Text(subtitleMostrar, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                            ],
-                          ),
-                        )
+                            ),
+                          ],
+                        ),
+                        
+                        // ÁREA INFERIOR DE ESTADO Y BOTONES
+                        _buildStatusArea(context, cita, isHistorial),
                       ],
                     ),
-                    const SizedBox(height: 15),
-                    _buildStatusArea(context, cita),
-                  ],
+                  ),
                 ),
-              ),
-            )
-          ],
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
+  // ==========================================
+  // ÁREA DE ESTADOS CONTROLADA POR EL ROL
+  // ==========================================
+  Widget _buildStatusArea(BuildContext context, Map<String, dynamic> cita, bool isHistorial) {
+    
+    // ------------------------------------------
+    // VISTA DEL DOCTOR: Solo información y Estatus
+    // ------------------------------------------
+    if (role == 'doctor') {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Divider(height: 25, color: Color(0xFFF0F0F0)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildEstadoBadge(cita['estado']),
+              if (isHistorial && ['cancelada', 'finalizada', 'rechazada', 'no asistida'].contains(cita['estado']))
+                InkWell(
+                  onTap: () => _confirmarEliminacion(context, cita['id']),
+                  borderRadius: BorderRadius.circular(50),
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(border: Border.all(color: Colors.red.shade200), shape: BoxShape.circle),
+                    child: Icon(MagicoonRegular.trash, color: Colors.red.shade400, size: 14),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      );
+    }
 
-  Widget _buildStatusArea(BuildContext context, Map<String, dynamic> cita) {
+
     var solicitudRecibida = cita['solicitud_recibida'];
     var solicitudEnviada = cita['solicitud_enviada'];
-    
+    bool yaSeReprogramo = cita['reprogramada'] == 1 || cita['reprogramada'] == true;
+    bool yaPropusoCambio = cita['ya_propuso_cambio'] == 1 || cita['ya_propuso_cambio'] == true;
+    bool puedeReagendarDirecto = (cita['estado'] == 'pendiente' && !yaSeReprogramo);
+    bool puedeSolicitarPropuesta = (cita['estado'] == 'confirmada' && !yaPropusoCambio);
 
-    if (solicitudRecibida != null) {
+    if (solicitudRecibida != null && !isHistorial) {
+      DateTime nuevaFecha = DateTime.parse(solicitudRecibida['nueva_fecha']);
+      String fechaFormateada = DateFormat('dd MMM yyyy', 'es_ES').format(nuevaFecha);
+      String nuevaHora = solicitudRecibida['nueva_hora'].toString().substring(0, 5);
+      String motivo = solicitudRecibida['motivo'] ?? 'Sin motivo';
+
       return Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(color: Colors.orange.shade50, borderRadius: BorderRadius.circular(10)),
+        margin: const EdgeInsets.only(top: 15),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(color: Colors.orange.shade50, borderRadius: BorderRadius.circular(15), border: Border.all(color: Colors.orange.shade200)),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("¡Nueva propuesta de horario!", style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 12)),
-            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(MagicoonFilled.exclamationCircle, color: Colors.orange.shade800, size: 16),
+                const SizedBox(width: 6),
+                Text("¡Nueva Propuesta!", style: TextStyle(color: Colors.orange.shade900, fontWeight: FontWeight.bold, fontSize: 13)),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("$fechaFormateada • $nuevaHora hrs", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                  const Divider(height: 12),
+                  Text('"$motivo"', style: TextStyle(color: Colors.grey.shade700, fontStyle: FontStyle.italic, fontSize: 12)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
             Row(
               children: [
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () => controller.responderPropuesta(cita['id'], 'aceptar'),
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.green, elevation: 0),
-                    child: const Text("Aceptar", style: TextStyle(fontSize: 12, color: Colors.white)),
+                    onPressed: () => _mostrarBottomSheetRechazo(context, cita['id']),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade50, foregroundColor: Colors.red.shade700, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                    child: const Text("Rechazar", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () => _mostrarBottomSheetRechazo(context, cita['id']),
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.red, elevation: 0),
-                    child: const Text("Rechazar", style: TextStyle(fontSize: 12, color: Colors.white)),
+                    onPressed: () => controller.responderPropuesta(cita['id'], 'aceptar'),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.green, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                    child: const Text("Aceptar", style: TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],
-            )
+            ),
           ],
         ),
       );
     }
 
-    if (solicitudEnviada != null) {
+    if (solicitudEnviada != null && !isHistorial) {
       return Container(
-        padding: const EdgeInsets.all(8),
+        margin: const EdgeInsets.only(top: 15),
+        padding: const EdgeInsets.all(10),
         alignment: Alignment.center,
-        decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(50)),
-        child: const Text("⏳ Esperando respuesta...", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 12)),
+        decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(12)),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.grey)),
+            SizedBox(width: 8),
+            Text("Esperando respuesta a tu propuesta...", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 11)),
+          ],
+        ),
       );
     }
 
-    Color badgeColor = Colors.grey.shade200;
-    Color textColor = Colors.grey.shade700;
-    if (cita['estado'] == 'pendiente') { badgeColor = Colors.orange.shade100; textColor = Colors.orange.shade800; }
-    else if (cita['estado'] == 'confirmada') { badgeColor = Colors.green.shade100; textColor = Colors.green.shade800; }
-    else if (cita['estado'] == 'cancelada') { badgeColor = Colors.red.shade100; textColor = Colors.red.shade800; }
-
-    bool canDelete = ['cancelada', 'rechazada', 'finalizada', 'no asistida'].contains(cita['estado']);
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.center,
+    return Column(
       children: [
-        // Badge de Estado
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(color: badgeColor, borderRadius: BorderRadius.circular(50)),
-          child: Text(cita['estado'].toString().toUpperCase(), style: TextStyle(color: textColor, fontSize: 10, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 15),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _buildEstadoBadge(cita['estado']),
+            if (isHistorial && ['cancelada', 'finalizada', 'rechazada', 'no asistida'].contains(cita['estado']))
+              InkWell(
+                onTap: () => _confirmarEliminacion(context, cita['id']),
+                borderRadius: BorderRadius.circular(50),
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(border: Border.all(color: Colors.red.shade200), shape: BoxShape.circle),
+                  child: Icon(MagicoonRegular.trash, color: Colors.red.shade400, size: 14),
+                ),
+              ),
+          ],
         ),
-        
-        const SizedBox(width: 8), // Pequeño margen
-        
-        // Acciones dinámicas con Wrap para evitar Overflows
-        Expanded(
-          child: Wrap(
-            alignment: WrapAlignment.end,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 0, // Espaciado horizontal entre botones
-            runSpacing: -10, // Espaciado vertical si bajan a la otra línea
-            children: [
-              if (canDelete)
-                IconButton(
-                  icon: const Icon(Icons.delete_outline, color: Colors.red),
-                  onPressed: () => _confirmarEliminacion(context, cita['id']),
-                )
-              else if (cita['estado'] == 'pendiente' || cita['estado'] == 'confirmada') ...[
-                TextButton(
-                  onPressed: () => _mostrarBottomSheetPropuesta(context, cita),
-                  // Reducimos un puntito la fuente para que quepa mejor
-                  child: const Text("Reprogramar", style: TextStyle(color: Colors.blue, fontSize: 11, fontWeight: FontWeight.bold)),
-                ),
-                TextButton(
-                  onPressed: () => _confirmarCancelacion(context, cita['id']),
-                  child: const Text("Cancelar", style: TextStyle(color: Colors.red, fontSize: 11, fontWeight: FontWeight.bold)),
-                ),
-              ]
-            ],
+
+        if (!isHistorial)
+          Padding(
+            padding: const EdgeInsets.only(top: 15),
+            child: Row(
+              children: [
+                if (puedeReagendarDirecto) ...[
+                  Expanded(child: _buildActionButton("Reagendar", MagicoonRegular.calendar, Colors.blue.shade700, Colors.blue.shade50, () => _mostrarModalReagendarLibre(context, cita))),
+                  const SizedBox(width: 8),
+                ],
+                
+                if (puedeSolicitarPropuesta) ...[
+                  Expanded(child: _buildActionButton("Proponer Cambio", MagicoonRegular.clock, Colors.blue.shade700, Colors.blue.shade50, () => _mostrarBottomSheetPropuesta(context, cita))),
+                  const SizedBox(width: 8),
+                ],
+
+                if (cita['estado'] == 'pendiente' || cita['estado'] == 'confirmada')
+                  Expanded(child: _buildActionButton("Cancelar", MagicoonRegular.timesCircle, Colors.red.shade700, Colors.red.shade50, () => _confirmarCancelacion(context, cita['id']))),
+              ],
+            ),
           ),
-        ),
       ],
     );
   }
 
 
+  Widget _buildActionButton(String text, IconData icon, Color textColor, Color bgColor, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: textColor.withOpacity(0.3)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 12, color: textColor),
+            const SizedBox(width: 5),
+            Flexible(
+              child: Text(
+                text, 
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: textColor),
+                maxLines: 1, 
+                overflow: TextOverflow.ellipsis
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEstadoBadge(String estado) {
+    Color badgeColor = Colors.grey.shade200;
+    Color textColor = Colors.grey.shade700;
+    IconData icon = MagicoonFilled.infoCircle;
+    if (estado == 'pendiente') {
+      badgeColor = Colors.orange.shade50;
+      textColor = Colors.orange.shade800;
+      icon = MagicoonFilled.clock;
+    } else if (estado == 'confirmada') {
+      badgeColor = Colors.green.shade50;
+      textColor = Colors.green.shade800;
+      icon = MagicoonFilled.checkCircle;
+    } else if (estado == 'cancelada' || estado == 'rechazada') {
+      badgeColor = Colors.red.shade50;
+      textColor = Colors.red.shade800;
+      icon = MagicoonFilled.timesCircle;
+    } else if (estado == 'finalizada') {
+      badgeColor = Colors.blue.shade50;
+      textColor = Colors.blue.shade800;
+      icon = MagicoonFilled.checkCircle;
+    } else if (estado == 'no asistida') {
+      badgeColor = Colors.red.shade50;
+      textColor = Colors.red.shade800;
+      icon = MagicoonFilled.user;
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: badgeColor,
+        borderRadius: BorderRadius.circular(50),
+        border: Border.all(color: textColor.withOpacity(0.2)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 10, color: textColor),
+          const SizedBox(width: 4),
+          Text(
+            estado.toUpperCase(),
+            style: TextStyle(color: textColor, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+          ),
+        ],
+      ),
+    );
+  }
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(25),
+            decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20)]),
+            child: Icon(MagicoonRegular.calendar, size: 60, color: Colors.grey.shade400),
+          ),
+          const SizedBox(height: 20),
+          const Text("No tienes citas registradas.", style: TextStyle(color: Colors.grey, fontSize: 16, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 5),
+          Text("Tus próximas consultas aparecerán aquí.", style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
+        ],
+      ),
+    );
+  }
+  // ==========================================
+  // FUNCIONES DE LOS MODALES DE PACIENTE
+  // ==========================================
   void _confirmarCancelacion(BuildContext context, int citaId) {
     Get.defaultDialog(
       title: "Cancelar Cita",
@@ -280,12 +618,11 @@ class MisCitasView extends StatelessWidget {
       buttonColor: Colors.red,
       cancelTextColor: MiTema.azulOscuro,
       onConfirm: () {
-        Get.back(); // Cerrar dialog
+        Get.back();
         controller.cancelarCita(citaId);
       },
     );
   }
-
   void _confirmarEliminacion(BuildContext context, int citaId) {
     Get.defaultDialog(
       title: "Ocultar Cita",
@@ -300,17 +637,12 @@ class MisCitasView extends StatelessWidget {
       },
     );
   }
-
   void _mostrarBottomSheetRechazo(BuildContext context, int citaId) {
     final TextEditingController motivoCtrl = TextEditingController();
-
     Get.bottomSheet(
       Container(
         padding: const EdgeInsets.all(20),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
+        decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(25))),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -349,156 +681,228 @@ class MisCitasView extends StatelessWidget {
       ),
     );
   }
-
   void _mostrarBottomSheetPropuesta(BuildContext context, Map<String, dynamic> cita) {
-    // Variables locales reactivas para este modal
     final Rxn<DateTime> selectedDate = Rxn<DateTime>();
     final RxnString selectedSlot = RxnString();
     final TextEditingController motivoCtrl = TextEditingController();
-    
-    // Limpiamos los slots anteriores al abrir el modal
     controller.availableSlots.clear();
     controller.slotMessage("Elige una fecha para ver horarios disponibles");
-
     int doctorId = cita['doctor_id'] ?? cita['doctor']['id'];
-
     Get.bottomSheet(
       Container(
-        padding: const EdgeInsets.all(20),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-        ),
-        child: Obx(() => Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(BootstrapIcons.calendar_event, color: MiTema.azulOscuro),
-                const SizedBox(width: 10),
-                const Text("Proponer Nuevo Horario", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              ],
-            ),
-            const SizedBox(height: 20),
-
-            // 1. Selector de Fecha
-            const Text("1. Selecciona la nueva fecha", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
-            const SizedBox(height: 8),
-            InkWell(
-              onTap: () async {
-                DateTime? picked = await showDatePicker(
-                  context: context,
-                  initialDate: DateTime.now().add(const Duration(days: 1)),
-                  firstDate: DateTime.now(),
-                  lastDate: DateTime.now().add(const Duration(days: 90)),
-                  builder: (context, child) {
-                    return Theme(
-                      data: Theme.of(context).copyWith(
-                        colorScheme: ColorScheme.light(primary: MiTema.azulOscuro),
+        padding: const EdgeInsets.all(25),
+        decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(30))),
+        child: Obx(
+          () => Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(MagicoonRegular.calendar, color: MiTema.azulOscuro),
+                  const SizedBox(width: 10),
+                  const Text("Proponer Nuevo Horario", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                ],
+              ),
+              const SizedBox(height: 25),
+              const Text("1. Selecciona la nueva fecha", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
+              const SizedBox(height: 8),
+              InkWell(
+                onTap: () async {
+                  DateTime? picked = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now().add(const Duration(days: 1)),
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime.now().add(const Duration(days: 90)),
+                    builder: (context, child) {
+                      return Theme(data: Theme.of(context).copyWith(colorScheme: ColorScheme.light(primary: MiTema.azulOscuro)), child: child!);
+                    },
+                  );
+                  if (picked != null) {
+                    selectedDate.value = picked;
+                    selectedSlot.value = null;
+                    String fechaFormateada = DateFormat('yyyy-MM-dd').format(picked);
+                    controller.fetchDisponibilidad(doctorId, fechaFormateada);
+                  }
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+                  decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(15)),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        selectedDate.value != null ? DateFormat('dd / MM / yyyy').format(selectedDate.value!) : "dd / mm / aaaa",
+                        style: TextStyle(color: selectedDate.value != null ? Colors.black87 : Colors.grey, fontWeight: FontWeight.bold),
                       ),
-                      child: child!,
-                    );
-                  },
-                );
-
-                if (picked != null) {
-                  selectedDate.value = picked;
-                  selectedSlot.value = null; // Reiniciar slot seleccionado
-                  String fechaFormateada = DateFormat('yyyy-MM-dd').format(picked);
-                  controller.fetchDisponibilidad(doctorId, fechaFormateada);
-                }
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
-                decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(15)),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      selectedDate.value != null ? DateFormat('dd / MM / yyyy').format(selectedDate.value!) : "dd / mm / aaaa",
-                      style: TextStyle(color: selectedDate.value != null ? Colors.black87 : Colors.grey, fontWeight: FontWeight.bold),
-                    ),
-                    const Icon(Icons.calendar_today, size: 18, color: Colors.grey),
-                  ],
+                      const Icon(MagicoonRegular.calendar, size: 18, color: Colors.grey),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
-
-            // 2. Horarios Disponibles (Cargan de Laravel)
-            const Text("2. Horarios disponibles", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
-            const SizedBox(height: 8),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(15), border: Border.all(color: Colors.grey.shade200)),
-              child: controller.isFetchingSlots.value 
-                ? Center(child: CircularProgressIndicator(color: MiTema.azulOscuro))
-                : controller.availableSlots.isEmpty
-                  ? Text(controller.slotMessage.value, style: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic), textAlign: TextAlign.center)
-                  : Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      alignment: WrapAlignment.center,
-                      children: controller.availableSlots.map((hora) {
-                        bool isSelected = selectedSlot.value == hora;
-                        return ChoiceChip(
-                          label: Text(hora, style: TextStyle(color: isSelected ? Colors.white : MiTema.azulOscuro, fontWeight: FontWeight.bold)),
-                          selected: isSelected,
-                          selectedColor: MiTema.azulOscuro,
-                          backgroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: MiTema.azulOscuro)),
-                          onSelected: (bool selected) {
-                            if (selected) selectedSlot.value = hora;
-                          },
-                        );
-                      }).toList(),
-                    ),
-            ),
-            const SizedBox(height: 20),
-
-            // 3. Motivo
-            const Text("Motivo del cambio", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
-            const SizedBox(height: 8),
-            TextField(
-              controller: motivoCtrl,
-              decoration: InputDecoration(
-                hintText: "Ej. Me surgió un contratiempo...",
-                filled: true,
-                fillColor: Colors.grey.shade100,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+              const SizedBox(height: 20),
+              const Text("2. Horarios disponibles", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(15),
+                decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(15), border: Border.all(color: Colors.grey.shade200)),
+                child: controller.isFetchingSlots.value
+                    ? Center(child: CircularProgressIndicator(color: MiTema.azulOscuro))
+                    : controller.availableSlots.isEmpty
+                    ? Text(controller.slotMessage.value, style: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic), textAlign: TextAlign.center)
+                    : Wrap(
+                        spacing: 8, runSpacing: 8, alignment: WrapAlignment.center,
+                        children: controller.availableSlots.map((hora) {
+                          bool isSelected = selectedSlot.value == hora;
+                          return ChoiceChip(
+                            label: Text(hora, style: TextStyle(color: isSelected ? Colors.white : MiTema.azulOscuro, fontWeight: FontWeight.bold)),
+                            selected: isSelected,
+                            selectedColor: MiTema.azulOscuro,
+                            backgroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: MiTema.azulOscuro)),
+                            onSelected: (bool selected) { if (selected) selectedSlot.value = hora; },
+                          );
+                        }).toList(),
+                      ),
               ),
-            ),
-            const SizedBox(height: 20),
-
-            // Botón Confirmar
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: MiTema.azulOscuro, 
-                  padding: const EdgeInsets.symmetric(vertical: 15), 
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
-                  disabledBackgroundColor: Colors.grey.shade300,
-                ),
-                onPressed: (selectedDate.value != null && selectedSlot.value != null)
-                    ? () {
-                        if (motivoCtrl.text.trim().isEmpty) {
-                          Get.snackbar('Atención', 'Por favor, escribe un motivo.', backgroundColor: Colors.orange.shade100);
-                          return;
+              const SizedBox(height: 20),
+              const Text("Motivo del cambio", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
+              const SizedBox(height: 8),
+              TextField(
+                controller: motivoCtrl,
+                decoration: InputDecoration(hintText: "Ej. Me surgió un contratiempo...", filled: true, fillColor: Colors.grey.shade100, border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none)),
+              ),
+              const SizedBox(height: 25),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: MiTema.azulOscuro, padding: const EdgeInsets.symmetric(vertical: 15), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)), disabledBackgroundColor: Colors.grey.shade300),
+                  onPressed: (selectedDate.value != null && selectedSlot.value != null)
+                      ? () {
+                          if (motivoCtrl.text.trim().isEmpty) {
+                            Get.snackbar('Atención', 'Por favor, escribe un motivo.', backgroundColor: Colors.orange.shade100);
+                            return;
+                          }
+                          String fechaFormat = DateFormat('yyyy-MM-dd').format(selectedDate.value!);
+                          controller.proponerCambio(cita['id'], fechaFormat, selectedSlot.value!, motivoCtrl.text.trim());
                         }
-                        String fechaFormat = DateFormat('yyyy-MM-dd').format(selectedDate.value!);
-                        controller.proponerCambio(cita['id'], fechaFormat, selectedSlot.value!, motivoCtrl.text.trim());
-                      }
-                    : null, // Desactiva el botón si no hay fecha y hora seleccionada
-                child: const Text("Enviar Propuesta", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      : null,
+                  child: const Text("Enviar Propuesta", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                ),
               ),
-            ),
-          ],
-        )),
+            ],
+          ),
+        ),
       ),
-      isScrollControlled: true, // Permite que el bottom sheet crezca al abrir el teclado
+      isScrollControlled: true,
+    );
+  }
+  void _mostrarModalReagendarLibre(BuildContext context, Map<String, dynamic> cita) {
+    final Rxn<DateTime> selectedDate = Rxn<DateTime>();
+    final RxnString selectedSlot = RxnString();
+    controller.availableSlots.clear();
+    controller.slotMessage("Elige una fecha para ver horarios disponibles");
+    int doctorId = cita['doctor_id'] ?? cita['doctor']['id'];
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.all(25),
+        decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(30))),
+        child: Obx(
+          () => Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(MagicoonFilled.calendar, color: MiTema.azulOscuro),
+                  const SizedBox(width: 10),
+                  const Text("Reagendar Cita", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                ],
+              ),
+              const SizedBox(height: 5),
+              const Text("Recuerda que solo puedes reagendar de forma directa una sola vez.", style: TextStyle(color: Colors.grey, fontSize: 12)),
+              const SizedBox(height: 25),
+              const Text("1. Selecciona la nueva fecha", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
+              const SizedBox(height: 8),
+              InkWell(
+                onTap: () async {
+                  DateTime? picked = await showDatePicker(
+                    context: context,
+                    initialDate: DateTime.now().add(const Duration(days: 1)),
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime.now().add(const Duration(days: 90)),
+                    builder: (context, child) {
+                      return Theme(data: Theme.of(context).copyWith(colorScheme: ColorScheme.light(primary: MiTema.azulOscuro)), child: child!);
+                    },
+                  );
+                  if (picked != null) {
+                    selectedDate.value = picked;
+                    selectedSlot.value = null;
+                    String fechaFormateada = DateFormat('yyyy-MM-dd').format(picked);
+                    controller.fetchDisponibilidad(doctorId, fechaFormateada);
+                  }
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+                  decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(15)),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        selectedDate.value != null ? DateFormat('dd / MM / yyyy').format(selectedDate.value!) : "dd / mm / aaaa",
+                        style: TextStyle(color: selectedDate.value != null ? Colors.black87 : Colors.grey, fontWeight: FontWeight.bold),
+                      ),
+                      const Icon(MagicoonRegular.calendar, size: 18, color: Colors.grey),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text("2. Horarios disponibles", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(15),
+                decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(15), border: Border.all(color: Colors.grey.shade200)),
+                child: controller.isFetchingSlots.value
+                    ? Center(child: CircularProgressIndicator(color: MiTema.azulOscuro))
+                    : controller.availableSlots.isEmpty
+                    ? Text(controller.slotMessage.value, style: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic), textAlign: TextAlign.center)
+                    : Wrap(
+                        spacing: 8, runSpacing: 8, alignment: WrapAlignment.center,
+                        children: controller.availableSlots.map((hora) {
+                          bool isSelected = selectedSlot.value == hora;
+                          return ChoiceChip(
+                            label: Text(hora, style: TextStyle(color: isSelected ? Colors.white : MiTema.azulOscuro, fontWeight: FontWeight.bold)),
+                            selected: isSelected,
+                            selectedColor: MiTema.azulOscuro,
+                            backgroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: MiTema.azulOscuro)),
+                            onSelected: (bool selected) { if (selected) selectedSlot.value = hora; },
+                          );
+                        }).toList(),
+                      ),
+              ),
+              const SizedBox(height: 30),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: MiTema.azulOscuro, padding: const EdgeInsets.symmetric(vertical: 15), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)), disabledBackgroundColor: Colors.grey.shade300),
+                  onPressed: (selectedDate.value != null && selectedSlot.value != null)
+                      ? () {
+                          String fechaFormat = DateFormat('yyyy-MM-dd').format(selectedDate.value!);
+                          controller.reagendarLibre(cita['id'], fechaFormat, selectedSlot.value!);
+                        }
+                      : null,
+                  child: const Text("Confirmar Nuevo Horario", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      isScrollControlled: true,
     );
   }
 }

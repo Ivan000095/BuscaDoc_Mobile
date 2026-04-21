@@ -1,8 +1,12 @@
+import 'package:buscadoc_mobile/utils/global.dart';
 import 'package:flutter/material.dart';
 import 'package:buscadoc_mobile/theme/tema.dart';
 import 'package:buscadoc_mobile/model/usuario.dart';
 import 'package:buscadoc_mobile/views/profile.dart';
 import 'package:buscadoc_mobile/iniciosesion.dart';
+import 'package:magicoon_icons/magicoon.dart';
+import 'package:get/get.dart';
+import 'package:buscadoc_mobile/views/expedientes/expedientes_view.dart';
 
 class UIUtils {
   static Widget divisor(double altura) {
@@ -112,7 +116,7 @@ class UIUtils {
     required String userEmail,
     String? fotoUrl,
   }) {
-    String baseUrl = "http://127.0.0.1:8000/storage/";
+    String baseUrl = "${Globals.webUrl}/storage/";
 
     return Drawer(
       width: MediaQuery.of(context).size.width * 0.75,
@@ -127,14 +131,16 @@ class UIUtils {
             Divider(color: Colors.grey.shade200, thickness: 1),
             const SizedBox(height: 10),
 
-            _buildMenuItem(
-              icon: Icons.settings_sharp, 
-              title: 'Configuración', 
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
-            
+            if (role == "paciente") 
+              _buildMenuItem(
+                icon: MagicoonFilled.folderOpen, 
+                title: 'ver mis expedientes', 
+                onTap: () {
+                  Get.back();
+                  Get.to(() => ExpedientesView());
+                },
+              ),
+                      
             const Spacer(),
             Divider(color: Colors.grey.shade200, thickness: 1),
             
@@ -145,7 +151,7 @@ class UIUtils {
               textColor: Colors.red.shade700,
               onTap: () async {
                 await Usuario.logout(); 
-if (context.mounted) {
+                if (context.mounted) {
                   Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(builder: (context) => const InicioSesion()),

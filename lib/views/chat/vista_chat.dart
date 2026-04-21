@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart'; // Asegúrate de tener GetX importado para la navegación si lo usas
 import 'package:buscadoc_mobile/model/contactos.dart';
 import 'package:buscadoc_mobile/model/chat.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:magicoon_icons/magicoon.dart';
-import 'package:magicoon_icons/icon_data/magicoon_filled_icons.dart';
+import 'package:buscadoc_mobile/theme/tema.dart'; // Tu tema con MiTema.azulOscuro
 
 class VistaChatView extends StatefulWidget {
   final ContactoChat contacto;
@@ -16,10 +17,7 @@ class VistaChatView extends StatefulWidget {
 }
 
 class _VistaChatViewState extends State<VistaChatView> {
-  final Color bgCanvas = const Color(0xFFF0F4F8); 
-  final Color bgSurface = const Color(0xFFFBFCFD); 
-  final Color brandNavy = const Color(0xFF112A46); 
-  
+  final Color bgCanvas = const Color(0xFFF5F7F9); // Fondo grisáceo muy claro
   final TextEditingController _msgController = TextEditingController();
 
   String miToken = '';
@@ -60,15 +58,23 @@ class _VistaChatViewState extends State<VistaChatView> {
     return Scaffold(
       backgroundColor: bgCanvas,
       appBar: AppBar(
-        backgroundColor: bgSurface,
-        elevation: 1,
-        shadowColor: brandNavy.withOpacity(0.2),
-        iconTheme: IconThemeData(color: brandNavy),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: false,
+        iconTheme: const IconThemeData(color: Colors.black87),
+        titleSpacing: 0,
         title: Row(
           children: [
-            CircleAvatar(
-              backgroundImage: NetworkImage(widget.contacto.fotoUrl),
-              radius: 18,
+            Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: MiTema.azulOscuro.withOpacity(0.2), width: 2),
+              ),
+              child: CircleAvatar(
+                backgroundImage: NetworkImage(widget.contacto.fotoUrl),
+                radius: 20,
+                backgroundColor: Colors.grey.shade100,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -77,23 +83,36 @@ class _VistaChatViewState extends State<VistaChatView> {
                 children: [
                   Text(
                     widget.contacto.nombre,
-                    style: TextStyle(color: brandNavy, fontSize: 16, fontWeight: FontWeight.bold),
+                    style: const TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.bold),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   Text(
                     widget.contacto.especialidad.isNotEmpty ? widget.contacto.especialidad : 'Paciente',
-                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                    style: TextStyle(color: MiTema.azulOscuro, fontSize: 12, fontWeight: FontWeight.w600),
                   ),
                 ],
               ),
             ),
           ],
         ),
+        actions: [
+          IconButton(
+            icon: Icon(MagicoonFilled.phone, color: MiTema.azulOscuro, size: 20),
+            onPressed: () {
+              // Simulación de botón de llamada (puedes agregar funcionalidad luego)
+              Get.snackbar("Llamada", "Función de llamada próximamente", backgroundColor: Colors.white);
+            },
+          ),
+          const SizedBox(width: 5),
+        ],
       ),
       
       body: configurando 
-        ? Center(child: CircularProgressIndicator(color: brandNavy))
+        ? Center(child: CircularProgressIndicator(color: MiTema.azulOscuro))
         : Column(
             children: [
+              // ÁREA DE MENSAJES
               Expanded(
                 child: StreamBuilder<DatabaseEvent>(
                   stream: FirebaseDatabase.instance
@@ -103,10 +122,10 @@ class _VistaChatViewState extends State<VistaChatView> {
                       .onValue,
                   builder: (context, snapshot) {
                     if (snapshot.hasError) {
-                      return const Center(child: Text('Error de conexión'));
+                      return const Center(child: Text('Error de conexión', style: TextStyle(color: Colors.grey)));
                     }
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return Center(child: CircularProgressIndicator(color: brandNavy));
+                      return Center(child: CircularProgressIndicator(color: MiTema.azulOscuro));
                     }
 
                     if (!snapshot.hasData || snapshot.data!.snapshot.value == null) {
@@ -118,11 +137,12 @@ class _VistaChatViewState extends State<VistaChatView> {
                       return Mensaje.fromJson(Map<String, dynamic>.from(jsonInfo), miId);
                     }).toList();
 
+                    // Ordenar por fecha (el más reciente abajo)
                     mensajes.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
                     return ListView.builder(
-                      reverse: true,
-                      padding: const EdgeInsets.all(15),
+                      reverse: true, // Empieza desde abajo
+                      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 20),
                       itemCount: mensajes.length,
                       itemBuilder: (context, index) {
                         return _buildBurbuja(mensajes[index]);
@@ -132,46 +152,63 @@ class _VistaChatViewState extends State<VistaChatView> {
                 ),
               ),
 
+              // ÁREA DE INPUT DE TEXTO
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                decoration: BoxDecoration(
-                  color: bgSurface,
-                  border: Border(top: BorderSide(color: brandNavy.withOpacity(0.1))),
+                padding: EdgeInsets.only(
+                  left: 15, right: 15, top: 10,
+                  // Agregamos padding inferior seguro para dispositivos sin botones (iPhone/Android modernos)
+                  bottom: MediaQuery.of(context).padding.bottom > 0 ? MediaQuery.of(context).padding.bottom + 10 : 20,
                 ),
-                child: SafeArea(
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: bgCanvas,
-                            borderRadius: BorderRadius.circular(30),
-                            border: Border.all(color: brandNavy.withOpacity(0.1)),
-                          ),
-                          child: TextField(
-                            controller: _msgController,
-                            decoration: const InputDecoration(
-                              hintText: 'Escribe un mensaje...',
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                            ),
-                            maxLines: null,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 15, offset: const Offset(0, -5))
+                  ],
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: bgCanvas,
+                          borderRadius: BorderRadius.circular(25),
+                          border: Border.all(color: Colors.grey.shade200),
+                        ),
+                        child: TextField(
+                          controller: _msgController,
+                          minLines: 1,
+                          maxLines: 4, // Crece hasta 4 líneas si el texto es largo
+                          textCapitalization: TextCapitalization.sentences,
+                          decoration: InputDecoration(
+                            hintText: 'Escribe tu mensaje...',
+                            hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 15),
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: brandNavy,
-                          shape: BoxShape.circle,
+                    ),
+                    const SizedBox(width: 10),
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 2), // Alineación visual con el TextField
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [MiTema.azulOscuro, const Color(0xFF1E3A8A)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                         ),
-                        child: IconButton(
-                          icon: const Icon(MagicoonFilled.send, color: Colors.white),
-                          onPressed: _enviarMensaje,
-                        ),
-                      )
-                    ],
-                  ),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(color: MiTema.azulOscuro.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 3))
+                        ],
+                      ),
+                      child: IconButton(
+                        icon: const Icon(MagicoonFilled.sendRight, color: Colors.white, size: 20),
+                        onPressed: _enviarMensaje,
+                      ),
+                    )
+                  ],
                 ),
               )
             ],
@@ -183,11 +220,19 @@ class _VistaChatViewState extends State<VistaChatView> {
     return Align(
       alignment: msg.isMine ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75), // Máximo 75% del ancho
         decoration: BoxDecoration(
-          color: msg.isMine ? brandNavy : bgSurface,
+          // GRADIENTE si es mi mensaje, BLANCO si es del otro
+          gradient: msg.isMine 
+            ? LinearGradient(
+                colors: [MiTema.azulOscuro, const Color(0xFF1E3A8A)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ) 
+            : null,
+          color: msg.isMine ? null : Colors.white,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(20),
             topRight: const Radius.circular(20),
@@ -195,18 +240,20 @@ class _VistaChatViewState extends State<VistaChatView> {
             bottomRight: Radius.circular(msg.isMine ? 5 : 20),
           ),
           boxShadow: [
-            BoxShadow(
-              color: brandNavy.withOpacity(0.05),
-              blurRadius: 5,
-              offset: const Offset(0, 2),
-            )
+            if (!msg.isMine) // Solo sombra ligera para los mensajes recibidos
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              )
           ],
         ),
         child: Text(
           msg.contenido,
           style: TextStyle(
-            color: msg.isMine ? Colors.white : brandNavy,
+            color: msg.isMine ? Colors.white : Colors.black87,
             fontSize: 15,
+            height: 1.3,
           ),
         ),
       ),
@@ -218,9 +265,26 @@ class _VistaChatViewState extends State<VistaChatView> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.chat_bubble_outline, size: 60, color: brandNavy.withOpacity(0.3)),
-          const SizedBox(height: 16),
-          const Text('Aún no hay mensajes. ¡Di hola!', style: TextStyle(color: Colors.grey)),
+          Container(
+            padding: const EdgeInsets.all(25),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 20)],
+            ),
+            child: Icon(MagicoonFilled.chat, size: 50, color: MiTema.azulOscuro.withOpacity(0.5)),
+          ),
+          const SizedBox(height: 20),
+          const Text(
+            '¡Inicia la conversación!', 
+            style: TextStyle(color: Colors.black87, fontSize: 18, fontWeight: FontWeight.bold)
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Envía un mensaje para comenzar\nel chat seguro.', 
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.grey.shade500, fontSize: 14)
+          ),
         ],
       ),
     );

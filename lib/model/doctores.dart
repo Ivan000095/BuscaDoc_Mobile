@@ -16,8 +16,8 @@ class Doctores {
   final String idiomas;
   final String cedula;
   final String rol;
-  final int horarioentrada;
-  final horariosalida;
+  final String horarioentrada;
+  final String horariosalida;
   final num costos;
   final double? promedio;
   final String? latitud;
@@ -107,15 +107,15 @@ class Doctores {
   factory Doctores.fromJson(Map<String, dynamic> json) {
     return Doctores(
       id: json['id'] ?? 0,
-      idUsuario: json['user_id'] ?? 0,
+      idUsuario: json['user_id'] ?? json['user']?['id'] ?? 0,
       especialidad: _obtenerEspecialidad(json),
-      nombre: json['name']?.toString() ?? 'Sin nombre',
+      nombre: json['user']?['name']?.toString() ?? json['name']?.toString() ?? 'Sin nombre',
       descripcion: json['descripcion']?.toString() ?? '',
       fecha: _parsearFecha(json['fecha']),
-      image: _fixImageUrl(json['image']),
+      image: _fixImageUrl(json['user']?['foto'] ?? json['image']),
       telefono: json['telefono']?.toString() ?? 'Sin teléfono',
-      horarioentrada: _parsearHora(json['horarioentrada']),
-      horariosalida: _parsearHora(json['horariosalida']),
+      horarioentrada: json['horarioentrada']?.toString() ?? 'Descanso',
+      horariosalida: json['horariosalida']?.toString() ?? '',
       idiomas: json['idioma']?.toString() ?? '',
       cedula: json['cedula']?.toString() ?? '',
       rol: json['role']?.toString() ?? 'doctor',
