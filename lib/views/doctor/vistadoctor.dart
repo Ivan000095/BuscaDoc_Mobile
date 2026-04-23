@@ -24,7 +24,6 @@ class DoctorDetailsView extends StatefulWidget {
 
 class _DoctorDetailsViewState extends State<DoctorDetailsView> {
   
-  // Función para abrir Google Maps con coordenadas reales
   Future<void> _abrirMapa() async {
     if (widget.doctor.latitud != null && widget.doctor.longitud != null) {
       final String googleMapsUrl = "https://www.google.com/maps/search/?api=1&query=${widget.doctor.latitud},${widget.doctor.longitud}";
@@ -48,7 +47,6 @@ class _DoctorDetailsViewState extends State<DoctorDetailsView> {
           CustomScrollView(
             physics: const BouncingScrollPhysics(),
             slivers: [
-              // APPBAR CON IMAGEN
               SliverAppBar(
                 expandedHeight: 320,
                 pinned: true,
@@ -66,7 +64,14 @@ class _DoctorDetailsViewState extends State<DoctorDetailsView> {
                   background: Stack(
                     fit: StackFit.expand,
                     children: [
-                      Image.network(doctor.image, fit: BoxFit.cover),
+                      Image.network(
+                        doctor.image, 
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          color: const Color(0xFFF5F7F9),
+                          child: Icon(MagicoonFilled.user, size: 80, color: Colors.grey.shade300),
+                        ),
+                      ),
                       const DecoratedBox(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
@@ -81,7 +86,6 @@ class _DoctorDetailsViewState extends State<DoctorDetailsView> {
                 ),
               ),
 
-              // CONTENIDO
               SliverToBoxAdapter(
                 child: Container(
                   transform: Matrix4.translationValues(0, -35, 0),
@@ -120,15 +124,11 @@ class _DoctorDetailsViewState extends State<DoctorDetailsView> {
                       
                       const SizedBox(height: 25),
 
-                      // BOTONES DE ACCIÓN RÁPIDA
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          _buildQuickAction(MagicoonFilled.map, "Mapa", Colors.blue, _abrirMapa),
-                          _buildQuickAction(MagicoonFilled.phone, "Llamar", Colors.green, () {
-                             if (doctor.telefono.isNotEmpty) UrlHelper.makePhoneCall(doctor.telefono);
-                          }),
-                          _buildQuickAction(MagicoonFilled.chat, "Mensaje", Colors.orange, () {
+                          _buildQuickAction(MagicoonFilled.map, "Mapa", MiTema.azulOscuro, _abrirMapa),
+                          _buildQuickAction(MagicoonFilled.chat, "Mensaje", MiTema.azulOscuro, () {
                              Get.to(() => VistaChatView(contacto: ContactoChat(
                                 id: doctor.idUsuario.toString(),
                                 rol: doctor.rol,
@@ -152,67 +152,130 @@ class _DoctorDetailsViewState extends State<DoctorDetailsView> {
 
                       const SizedBox(height: 35),
 
-                      // TABLA DE HORARIOS (NATIVO EN VISTA)
-                      const Text('Horario de atención', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+                      const Text('Horarios de atención', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
                       const SizedBox(height: 15),
                       Container(
-                        padding: const EdgeInsets.all(20),
+                        padding: const EdgeInsets.only(top: 20, bottom: 20, left: 15), 
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(25),
-                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 15)],
+                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 15, offset: const Offset(0, 5))],
                         ),
                         child: doctor.disponibilidades.isEmpty
                             ? const Center(
-                                child: Text(
-                                  "No hay horarios registrados", 
-                                  style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic)
-                                )
+                                child: Padding(
+                                  padding: EdgeInsets.all(20.0),
+                                  child: Text(
+                                    "No hay horarios registrados",
+                                    style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic)
+                                  ),
+                                ),
                               )
-                            : Builder(
-                                builder: (context) {
-                                  const diasNombres = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-
-                                  List<dynamic> listaOrdenada = List.from(doctor.disponibilidades);
-                                  
-                                  listaOrdenada.sort((a, b) {
-                                    // CORRECCIÓN 1: Forzamos la conversión a Entero (int)
-                                    int diaA = int.tryParse(a['dia_semana'].toString()) ?? 0;
-                                    int diaB = int.tryParse(b['dia_semana'].toString()) ?? 0;
-
-                                    diaA = diaA == 0 ? 7 : diaA;
-                                    diaB = diaB == 0 ? 7 : diaB;
-                                    return diaA.compareTo(diaB);
-                                  });
-
-                                  List<Widget> filas = [];
-                                  for (int i = 0; i < listaOrdenada.length; i++) {
-                                    var disp = listaOrdenada[i];
+                            : SizedBox(
+                                height: 190, 
+                                child: ListView.builder(
+                                  scrollDirection: Axis.horizontal,
+                                  physics: const BouncingScrollPhysics(),
+                                  itemCount: 7, 
+                                  itemBuilder: (context, index) {
+                                    DateTime fechaActual = DateTime.now().add(Duration(days: index));
+                                    int diaBusqueda = fechaActual.weekday == 7 ? 0 : fechaActual.weekday;
                                     
-                                    // CORRECCIÓN 2: Aseguramos que el índice sea un Entero válido
-                                    int diaNum = int.tryParse(disp['dia_semana'].toString()) ?? 0;
-                                    String nombreDia = diasNombres[diaNum];
-                                    
-                                    String hInicio = disp['hora_inicio'].toString().substring(0, 5);
-                                    String hFin = disp['hora_fin'].toString().substring(0, 5);
+                                    var horariosDia = doctor.disponibilidades.where((d) {
+                                      int diaD = int.tryParse(d['dia_semana'].toString()) ?? -1;
+                                      return diaD == diaBusqueda;
+                                    }).toList();
 
-                                    filas.add(_buildScheduleRow(nombreDia, "$hInicio - $hFin hrs"));
+                                    horariosDia.sort((a, b) => a['hora_inicio'].toString().compareTo(b['hora_inicio'].toString()));
 
-                                    if (i < listaOrdenada.length - 1) {
-                                      filas.add(const Padding(
-                                        padding: EdgeInsets.symmetric(vertical: 8), 
-                                        child: Divider(color: Color(0xFFF0F0F0))
-                                      ));
+                                    String tituloDia;
+                                    if (index == 0) tituloDia = "Hoy";
+                                    else if (index == 1) tituloDia = "Mañana";
+                                    else {
+                                      const nombresDias = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+                                      tituloDia = nombresDias[diaBusqueda];
                                     }
-                                  }
 
-                                  return Column(children: filas);
-                                },
+                                    const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+                                    String fechaStr = "${fechaActual.day} ${meses[fechaActual.month - 1]}";
+
+                                    return Container(
+                                      width: 90, 
+                                      margin: const EdgeInsets.only(right: 15),
+                                      child: Column(
+                                        children: [
+                                          Text(
+                                            tituloDia,
+                                            style: TextStyle(
+                                              fontSize: 15,
+                                              color: Colors.black87,
+                                              fontWeight: index < 2 ? FontWeight.w600 : FontWeight.normal, 
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            fechaStr,
+                                            style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+                                          ),
+                                          const SizedBox(height: 15),
+
+                                          if (horariosDia.isEmpty)
+                                            const Padding(
+                                              padding: EdgeInsets.only(top: 15),
+                                              child: Text("-", style: TextStyle(color: Colors.grey, fontSize: 24, fontWeight: FontWeight.w300)),
+                                            )
+                                          else
+                                            Expanded(
+                                              child: SingleChildScrollView(
+                                                physics: const BouncingScrollPhysics(),
+                                                child: Column(
+                                                  children: horariosDia.map((disp) {
+                                                    String hInicio = disp['hora_inicio'].toString().substring(0, 5);
+                                                    String hFin = disp['hora_fin'].toString().substring(0, 5);
+
+                                                    return Container(
+                                                      margin: const EdgeInsets.only(bottom: 10),
+                                                      padding: const EdgeInsets.symmetric(vertical: 10),
+                                                      width: double.infinity,
+                                                      decoration: BoxDecoration(
+                                                        color: MiTema.azulOscuro.withOpacity(0.08), 
+                                                        borderRadius: BorderRadius.circular(20),
+                                                      ),
+                                                      child: Column(
+                                                        children: [
+                                                          Text(
+                                                            hInicio,
+                                                            style: TextStyle(
+                                                              color: MiTema.azulOscuro, 
+                                                              fontWeight: FontWeight.bold,
+                                                              fontSize: 15,
+                                                            ),
+                                                          ),
+                                                          Text(
+                                                            "a $hFin",
+                                                            style: TextStyle(
+                                                              color: MiTema.azulOscuro.withOpacity(0.7), 
+                                                              fontSize: 11,
+                                                              fontWeight: FontWeight.w600
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    );
+                                                  }).toList(),
+                                                ),
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                ),
                               ),
                       ),
                       const SizedBox(height: 40),
                       _buildReviewsSection(context, doctor.idUsuario),
-                      const SizedBox(height: 120), // Padding para el botón fijo
+                      const SizedBox(height: 120),
                     ],
                   ),
                 ),
@@ -486,18 +549,25 @@ class _DoctorDetailsViewState extends State<DoctorDetailsView> {
     final autor = review['autor'] ?? {};
     final calificacion = review['calificacion'] as int?;
     final commentId = review['id'];
+    
+    final String fotoUrl = autor['foto'] != null 
+        ? '${Globals.webUrl}/storage/${autor['foto']}' 
+        : '';
+    final String nombre = autor['name'] ?? 'Usuario anónimo';
+    final String fecha = _formatDate(review['created_at']);
+    final String contenido = review['contenido'] ?? '';
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -505,60 +575,87 @@ class _DoctorDetailsViewState extends State<DoctorDetailsView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               CircleAvatar(
-                radius: 20,
-                backgroundImage: autor['foto'] != null
-                    ? NetworkImage('${Globals.webUrl}/storage/${autor['foto']}')
-                    : null,
-                child: autor['foto'] == null
-                    ? const Icon(Icons.person, size: 20, color: Colors.grey)
+                radius: 24,
+                backgroundColor: MiTema.azulOscuro.withOpacity(0.1),
+                backgroundImage: fotoUrl.isNotEmpty ? NetworkImage(fotoUrl) : null,
+                child: fotoUrl.isEmpty
+                    ? Text(
+                        nombre.isNotEmpty ? nombre[0].toUpperCase() : 'U', 
+                        style: TextStyle(color: MiTema.azulOscuro, fontWeight: FontWeight.bold, fontSize: 18)
+                      )
                     : null,
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      autor['name'] ?? 'Usuario anónimo',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        color: Colors.black87,
-                      ),
+                      nombre,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.black87),
+                      maxLines: 1, 
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      _formatDate(review['created_at']),
-                      style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        if (calificacion != null) ...[
+                          Row(
+                            children: List.generate(5, (index) {
+                              return Icon(
+                                index < calificacion ? Icons.star_rounded : Icons.star_outline_rounded,
+                                color: Colors.amber,
+                                size: 16,
+                              );
+                            }),
+                          ),
+                          const SizedBox(width: 8),
+                          // Puntito separador
+                          Container(width: 4, height: 4, decoration: BoxDecoration(color: Colors.grey.shade400, shape: BoxShape.circle)),
+                          const SizedBox(width: 8),
+                        ],
+                        Expanded(
+                          child: Text(
+                            fecha,
+                            style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                            maxLines: 1, 
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
-              if (calificacion != null)
-                Row(
-                  children: List.generate(5, (index) {
-                    return Icon(
-                      index < calificacion ? Icons.star : Icons.star_border,
-                      color: Colors.amber,
-                      size: 14,
-                    );
-                  }),
-                ),
             ],
           ),
-          const SizedBox(height: 12),
-          Text(
-            review['contenido'] ?? '',
-            style: TextStyle(fontSize: 14, color: Colors.grey.shade700, height: 1.4),
-          ),
-          const SizedBox(height: 8),
+          
+          if (contenido.isNotEmpty) ...[
+            const SizedBox(height: 15),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF5F7F9), // Fondo gris muy suave
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade100)
+              ),
+              child: Text(
+                contenido,
+                style: TextStyle(fontSize: 13, color: Colors.grey.shade800, height: 1.4),
+              ),
+            ),
+          ],
+          
+          // BOTÓN DE RESPUESTAS
+          const SizedBox(height: 10),
           Align(
             alignment: Alignment.centerRight,
-            child: TextButton(
-              onPressed: () {
+            child: InkWell(
+              onTap: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -569,12 +666,19 @@ class _DoctorDetailsViewState extends State<DoctorDetailsView> {
                   ),
                 );
               },
-              child: Text(
-                'Ver respuestas →',
-                style: TextStyle(
-                  fontSize: 12, 
-                  color: MiTema.azulOscuro, 
-                  fontWeight: FontWeight.w600
+              borderRadius: BorderRadius.circular(20),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Ver respuestas',
+                      style: TextStyle(fontSize: 12, color: MiTema.azulOscuro, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(Icons.arrow_forward_rounded, size: 14, color: MiTema.azulOscuro),
+                  ],
                 ),
               ),
             ),
@@ -604,4 +708,5 @@ class _DoctorDetailsViewState extends State<DoctorDetailsView> {
       return dateString;
     }
   }
+
 }

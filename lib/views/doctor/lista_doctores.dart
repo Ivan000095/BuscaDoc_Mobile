@@ -27,7 +27,6 @@ class _ListaDoctoresViewState extends State<ListaDoctoresView> {
   @override
   void initState() {
     super.initState();
-    // Escuchamos el teclado para filtrar en tiempo real
     _searchController.addListener(() {
       setState(() {
         _searchQuery = _searchController.text.toLowerCase();
@@ -41,23 +40,19 @@ class _ListaDoctoresViewState extends State<ListaDoctoresView> {
     super.dispose();
   }
 
-  // 1. OBTENER LISTA DE ESPECIALIDADES ÚNICAS PARA EL DROPDOWN
   List<String> get _especialidadesDisponibles {
     final specs = widget.doctores.map((d) => d.especialidad).toSet().toList();
-    specs.sort(); // Ordenadas alfabéticamente
+    specs.sort();
     return specs;
   }
 
-  // 2. FILTRAR Y AGRUPAR LOS DOCTORES
   Map<String, List<Doctores>> get _doctoresFiltradosYAgrupados {
-    // Primero filtramos
     var filtrados = widget.doctores.where((doc) {
       final coincideNombre = doc.nombre.toLowerCase().contains(_searchQuery);
       final coincideEspecialidad = _selectedSpecialty == null || _selectedSpecialty == 'Todas' || doc.especialidad == _selectedSpecialty;
       return coincideNombre && coincideEspecialidad;
     }).toList();
 
-    // Luego agrupamos por especialidad
     Map<String, List<Doctores>> agrupados = {};
     for (var doc in filtrados) {
       agrupados.putIfAbsent(doc.especialidad, () => []).add(doc);
@@ -85,14 +80,11 @@ class _ListaDoctoresViewState extends State<ListaDoctoresView> {
     }
 
     final dataAgrupada = _doctoresFiltradosYAgrupados;
-    final especialidadesNombres = dataAgrupada.keys.toList()..sort(); // Ordenar cabeceras A-Z
+    final especialidadesNombres = dataAgrupada.keys.toList()..sort(); 
 
     return Column(
       children: [
-        // TARJETA DE BÚSQUEDA Y FILTRO
         _buildBuscadorFlotante(),
-
-        // LISTA AGRUPADA
         Expanded(
           child: dataAgrupada.isEmpty
             ? Center(
@@ -109,7 +101,6 @@ class _ListaDoctoresViewState extends State<ListaDoctoresView> {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // ENCABEZADO DE LA ESPECIALIDAD
                       Padding(
                         padding: const EdgeInsets.only(top: 15, bottom: 10, left: 5),
                         child: Row(
@@ -120,17 +111,22 @@ class _ListaDoctoresViewState extends State<ListaDoctoresView> {
                               child: Icon(MagicoonFilled.star, color: MiTema.azulOscuro, size: 14),
                             ),
                             const SizedBox(width: 10),
-                            Text(
-                              especialidad,
-                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: MiTema.azulOscuro),
+                            
+                            Flexible(
+                              child: Text(
+                                especialidad,
+                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: MiTema.azulOscuro),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
+                            
                             const SizedBox(width: 10),
                             Expanded(child: Divider(color: Colors.grey.shade300)),
                           ],
                         ),
                       ),
                       
-                      // TARJETAS DE DOCTORES DE ESTA ESPECIALIDAD
                       ...docsDeEstaEspecialidad.map((doctor) => _buildDoctorCard(doctor)),
                       const SizedBox(height: 10),
                     ],
@@ -142,7 +138,7 @@ class _ListaDoctoresViewState extends State<ListaDoctoresView> {
     );
   }
 
-  // WIDGET: TARJETA DE BÚSQUEDA
+
   Widget _buildBuscadorFlotante() {
     return Container(
       margin: const EdgeInsets.only(top: 15, left: 16, right: 16, bottom: 5),
@@ -154,7 +150,6 @@ class _ListaDoctoresViewState extends State<ListaDoctoresView> {
       ),
       child: Column(
         children: [
-          // Input de texto
           Container(
             decoration: BoxDecoration(
               color: const Color(0xFFF5F7F9),
@@ -183,7 +178,6 @@ class _ListaDoctoresViewState extends State<ListaDoctoresView> {
           ),
           const SizedBox(height: 15),
           
-          // Dropdown de Especialidades
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 15),
             decoration: BoxDecoration(
@@ -269,12 +263,10 @@ class _ListaDoctoresViewState extends State<ListaDoctoresView> {
                 ),
                 const SizedBox(width: 15),
                 
-                // INFORMACIÓN DEL DOCTOR
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Calificación
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
@@ -286,7 +278,6 @@ class _ListaDoctoresViewState extends State<ListaDoctoresView> {
                           ),
                         ],
                       ),
-                      // Nombre
                       Text(
                         doctor.nombre.startsWith("Dr") ? doctor.nombre : "Dr. ${doctor.nombre}",
                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: MiTema.azulOscuro),
@@ -294,14 +285,12 @@ class _ListaDoctoresViewState extends State<ListaDoctoresView> {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 8),
-                      // Horario
                       Row(
                         children: [
                           Icon(MagicoonFilled.clock, color: MiTema.azulOscuro, size: 14),
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
-                              // Si en Laravel se determinó que hoy es descanso, mostramos el mensaje.
                               doctor.horarioentrada == 'Descanso'
                                   ? 'No disponible hoy'
                                   : '${doctor.horarioentrada} - ${doctor.horariosalida} hrs',
@@ -316,7 +305,6 @@ class _ListaDoctoresViewState extends State<ListaDoctoresView> {
                         ],
                       ),
                       const SizedBox(height: 6),
-                      // Precio
                       Row(
                         children: [
                           Icon(MagicoonFilled.wallet, color: const Color(0xFF10B981), size: 15), // Verde

@@ -11,6 +11,7 @@ import 'package:buscadoc_mobile/views/doctor/vistadoctor.dart';
 import 'package:buscadoc_mobile/model/doctores.dart';
 import 'package:get/get.dart';
 import 'package:magicoon_icons/magicoon.dart';
+import 'package:buscadoc_mobile/views/doctor/EspecialidadDetails.dart';
 
 class HomeDashboard extends StatefulWidget {
   final String role;
@@ -24,6 +25,7 @@ class HomeDashboard extends StatefulWidget {
 
 class _HomeDashboardState extends State<HomeDashboard> {
   GoogleMapController? _mapController;
+  Map<String, dynamic>? _markerSeleccionado;
 
   bool _cargando = true;
   Map<String, dynamic>? _dashboard;
@@ -357,7 +359,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
         TextField(
           controller: _searchController,
           decoration: InputDecoration(
-            hintText: "Nombre, clínica o síntoma...",
+            hintText: "Nombre del doctor o Farmacia",
             hintStyle: const TextStyle(color: Colors.black38),
             prefixIcon: const Icon(Icons.search, color: Colors.grey),
             filled: true,
@@ -440,14 +442,11 @@ class _HomeDashboardState extends State<HomeDashboard> {
     );
   }
 
-  Widget _buildSeccionEspecialidades(List<Especialidades> especialidades) {
+  Widget _buildSeccionEspecialidades(List<dynamic> especialidades) {
     if (especialidades.isEmpty) return const SizedBox.shrink();
 
-    // Calculamos si hay más especialidades por mostrar
     bool mostrarBotonVerMas = _limiteEspecialidades < especialidades.length;
-    
-    // Filtramos la lista basándonos en el límite actual
-    List<Especialidades> especialidadesVisibles = especialidades.take(_limiteEspecialidades).toList();
+    List<dynamic> especialidadesVisibles = especialidades.take(_limiteEspecialidades).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -463,7 +462,6 @@ class _HomeDashboardState extends State<HomeDashboard> {
         ),
         const SizedBox(height: 15),
         
-        // CINTA DE BURBUJAS (Muestra todas las burbujas para dar contexto rápido)
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           physics: const BouncingScrollPhysics(),
@@ -472,7 +470,6 @@ class _HomeDashboardState extends State<HomeDashboard> {
               final count = esp.doctores?.length ?? 0;
               return Container(
                 margin: const EdgeInsets.only(right: 10, bottom: 5),
-                padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(30),
@@ -485,35 +482,48 @@ class _HomeDashboardState extends State<HomeDashboard> {
                     ),
                   ],
                 ),
-                child: Row(
-                  children: [
-                    const Icon(MagicoonFilled.star, color: Colors.amber, size: 16),
-                    const SizedBox(width: 8),
-                    Text(
-                      esp.nombre,
-                      style: TextStyle(
-                        color: MiTema.azulOscuro,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(30),
+                    onTap: () {
+                      // 👇 NAVEGACIÓN A LA NUEVA VISTA
+                      Get.to(() => EspecialidadDetalleView(especialidad: esp));
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+                      child: Row(
+                        children: [
+                          const Icon(MagicoonFilled.star, color: Colors.amber, size: 16),
+                          const SizedBox(width: 8),
+                          Text(
+                            esp.nombre,
+                            style: TextStyle(
+                              color: MiTema.azulOscuro,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: MiTema.azulOscuro.withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Text(
+                              count.toString(),
+                              style: TextStyle(
+                                color: MiTema.azulOscuro,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: MiTema.azulOscuro.withOpacity(0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Text(
-                        count.toString(),
-                        style: TextStyle(
-                          color: MiTema.azulOscuro,
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               );
             }).toList(),
@@ -521,62 +531,90 @@ class _HomeDashboardState extends State<HomeDashboard> {
         ),
         const SizedBox(height: 25),
 
-        // MATRIZ DE DOCTORES (Muestra solo las visibles)
         ...especialidadesVisibles.map((esp) {
-          final doctores = esp.doctores ?? [];
-          if (doctores.isEmpty) return const SizedBox.shrink();
+          final doctoresRaw = esp.doctores ?? [];
+          if (doctoresRaw.isEmpty) return const SizedBox.shrink();
           
+          // 👇 1. MAPEAR Y ORDENAR A LOS DOCTORES POR CALIFICACIÓN
+          List<Doctores> doctoresOrdenados = doctoresRaw.map<Doctores?>((d) {
+            try { return Doctores.fromJson(d); } catch (_) { return null; }
+          }).whereType<Doctores>().toList();
+
+          doctoresOrdenados.sort((a, b) => (b.promedio ?? 0.0).compareTo(a.promedio ?? 0.0));
+
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 esp.nombre,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: MiTema.azulOscuro,
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: MiTema.azulOscuro),
               ),
               const SizedBox(height: 15),
               
-              // AUMENTAMOS LA ALTURA A 245 PARA QUE QUEPA EL HORARIO
               SizedBox(
                 height: 245, 
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   physics: const BouncingScrollPhysics(),
-                  itemCount: doctores.length,
+                  itemCount: doctoresOrdenados.length, // Usamos la lista ordenada
                   itemBuilder: (context, index) {
-                    final doctorRaw = doctores[index];
+                    final docMapeado = doctoresOrdenados[index]; // Ya es un objeto Doctores
                     
-                    // Mapeamos el doctor desde aquí para sacar todos sus datos limpios
-                    Doctores? docMapeado;
-                    try {
-                      docMapeado = Doctores.fromJson(doctorRaw);
-                    } catch (_) {}
-
-                    final docName = docMapeado?.nombre ?? doctorRaw['user']?['name']?.toString() ?? 'Doctor';
-                    // El modelo ya resuelve el link con Globals.webUrl
-                    final imgUrl = docMapeado?.image ?? ''; 
+                    final docName = docMapeado.nombre;
+                    final imgUrl = docMapeado.image; 
                     final bool tieneFoto = imgUrl.isNotEmpty && !imgUrl.contains('placeholder');
                     
-                    // Lógica del horario
-                    final bool esDescanso = docMapeado?.horarioentrada == 'Descanso' || docMapeado?.horarioentrada == null;
+                    final bool esDescanso = docMapeado.horarioentrada == 'Descanso' || docMapeado.horarioentrada.isEmpty;
+                    bool estaDisponibleAhora = false;
+
+                    if (!esDescanso) {
+                      try {
+                        final partesEntrada = docMapeado.horarioentrada.split(':');
+                        final partesSalida = docMapeado.horariosalida.split(':');
+                        
+                        if (partesEntrada.length >= 2 && partesSalida.length >= 2) {
+                          int hE = int.parse(partesEntrada[0]);
+                          int mE = int.parse(partesEntrada[1]);
+                          int hS = int.parse(partesSalida[0]);
+                          int mS = int.parse(partesSalida[1]);
+                          
+                          TimeOfDay ahora = TimeOfDay.now();
+                          double nowVal = ahora.hour + (ahora.minute / 60.0);
+                          if (nowVal >= (hE + (mE / 60.0)) && nowVal <= (hS + (mS / 60.0))) {
+                            estaDisponibleAhora = true;
+                          }
+                        }
+                      } catch (_) {}
+                    }
+
+                    Color bgColor;
+                    Color textColor;
+                    String textoPildora;
+                    IconData iconoPildora = MagicoonFilled.clock;
+
+                    if (esDescanso) {
+                      bgColor = Colors.red.shade50;
+                      textColor = Colors.red.shade700;
+                      textoPildora = 'Hoy no atiende';
+                      iconoPildora = MagicoonFilled.moon;
+                    } else if (!estaDisponibleAhora) {
+                      bgColor = Colors.orange.shade50;
+                      textColor = Colors.orange.shade800;
+                      textoPildora = 'No disponible ahora';
+                    } else {
+                      bgColor = Colors.green.shade50;
+                      textColor = Colors.green.shade700;
+                      textoPildora = '${docMapeado.horarioentrada} - ${docMapeado.horariosalida}';
+                    }
 
                     return Container(
                       width: 150,
                       margin: const EdgeInsets.only(right: 15, bottom: 10),
-                      padding: const EdgeInsets.all(12), // Un padding ligeramente menor
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.04),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
+                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
                       ),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -586,101 +624,51 @@ class _HomeDashboardState extends State<HomeDashboard> {
                             backgroundColor: MiTema.azulOscuro.withOpacity(0.1),
                             backgroundImage: tieneFoto ? NetworkImage(imgUrl) : null,
                             child: !tieneFoto
-                                ? Text(
-                                    docName.isNotEmpty ? docName[0].toUpperCase() : 'D',
-                                    style: TextStyle(
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.bold,
-                                      color: MiTema.azulOscuro,
-                                    ),
-                                  )
+                                ? Text(docName.isNotEmpty ? docName[0].toUpperCase() : 'D', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: MiTema.azulOscuro))
                                 : null,
                           ),
                           const SizedBox(height: 10),
                           Text(
                             docName.startsWith("Dr") ? docName : "Dr. $docName",
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
-                            ),
-                            textAlign: TextAlign.center,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                            textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 2),
-                          Text(
-                            esp.nombre,
-                            style: const TextStyle(
-                              color: Colors.grey,
-                              fontSize: 10,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                          // 👇 OPCIONAL: Puedes mostrar las estrellas aquí también para confirmar que sirve
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(MagicoonFilled.star, color: Colors.amber, size: 10),
+                              const SizedBox(width: 4),
+                              Text(
+                                (docMapeado.promedio ?? 0.0).toStringAsFixed(1),
+                                style: const TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold),
+                              ),
+                            ],
                           ),
-                          
                           const SizedBox(height: 8),
-
-                          // ==========================================
-                          // NUEVO BLOQUE: HORARIO DE HOY EN MINIATURA
-                          // ==========================================
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: esDescanso ? Colors.red.shade50 : Colors.green.shade50,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
+                            decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(6)),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(
-                                  esDescanso ? MagicoonFilled.moon : MagicoonFilled.clock,
-                                  size: 10,
-                                  color: esDescanso ? Colors.red.shade700 : Colors.green.shade700,
-                                ),
+                                Icon(iconoPildora, size: 10, color: textColor),
                                 const SizedBox(width: 4),
                                 Flexible(
-                                  child: Text(
-                                    esDescanso
-                                        ? 'Hoy no atiende'
-                                        : '${docMapeado!.horarioentrada} - ${docMapeado.horariosalida}',
-                                    style: TextStyle(
-                                      fontSize: 9, // Letra pequeñita para que quepa bien
-                                      fontWeight: FontWeight.bold,
-                                      color: esDescanso ? Colors.red.shade700 : Colors.green.shade700,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
+                                  child: Text(textoPildora, style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: textColor), maxLines: 1, overflow: TextOverflow.ellipsis),
                                 ),
                               ],
                             ),
                           ),
-
                           const Spacer(),
                           SizedBox(
                             width: double.infinity,
                             child: OutlinedButton(
-                              onPressed: () {
-                                if (docMapeado != null) {
-                                  Get.to(() => DoctorDetailsView(doctor: docMapeado!));
-                                }
-                              },
-                              style: OutlinedButton.styleFrom(
-                                side: BorderSide(color: MiTema.azulOscuro),
-                                foregroundColor: MiTema.azulOscuro,
-                                padding: const EdgeInsets.symmetric(vertical: 6),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(30),
-                                ),
-                              ),
-                              child: const Text(
-                                "Ver Perfil",
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+                              onPressed: () => Get.to(() => DoctorDetailsView(doctor: docMapeado)),
+                              style: OutlinedButton.styleFrom(side: BorderSide(color: MiTema.azulOscuro), foregroundColor: MiTema.azulOscuro, padding: const EdgeInsets.symmetric(vertical: 6), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))),
+                              child: const Text("Ver Perfil", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                             ),
                           ),
                         ],
@@ -694,7 +682,6 @@ class _HomeDashboardState extends State<HomeDashboard> {
           );
         }).toList(),
 
-        // BOTÓN "VER MÁS"
         if (mostrarBotonVerMas)
           Center(
             child: TextButton.icon(
@@ -720,8 +707,21 @@ class _HomeDashboardState extends State<HomeDashboard> {
 
   Widget _buildMapaUbicaciones(List<dynamic> rutas) {
     if (rutas.isEmpty) return const SizedBox.shrink();
+    
+    // 👇 1. CLONAMOS Y ORDENAMOS LA LISTA (Mayor calificación primero)
+    List<dynamic> rutasOrdenadas = List.from(rutas);
+    rutasOrdenadas.sort((a, b) {
+      if (a is! Map<String, dynamic> || b is! Map<String, dynamic>) return 0;
+      
+      double promA = double.tryParse(a['promedio']?.toString() ?? '0') ?? 0.0;
+      double promB = double.tryParse(b['promedio']?.toString() ?? '0') ?? 0.0;
+      
+      return promB.compareTo(promA); // Orden descendente
+    });
+
     final markers = <Marker>{};
-    for (final ruta in rutas) {
+    // Pasamos a iterar sobre la lista YA ORDENADA
+    for (final ruta in rutasOrdenadas) {
       if (ruta is! Map<String, dynamic>) continue;
       
       final lat = double.tryParse(ruta['latitud']?.toString() ?? '0') ?? 0;
@@ -731,13 +731,18 @@ class _HomeDashboardState extends State<HomeDashboard> {
       markers.add(Marker(
         markerId: MarkerId(ruta['id']?.toString() ?? 'unknown'),
         position: LatLng(lat, lng),
-        infoWindow: InfoWindow(title: ruta['name']?.toString() ?? 'Clínica', snippet: (ruta['role']?.toString() ?? '').toUpperCase()),
+        onTap: () {
+          setState(() {
+            _markerSeleccionado = ruta;
+          });
+        },
       ));
     }
 
     LatLng centroInicial = const LatLng(16.9084, -92.0977);
-    if (rutas.isNotEmpty && rutas[0] is Map<String, dynamic>) {
-      final first = rutas[0] as Map<String, dynamic>;
+    // Centramos el mapa en el doctor MEJOR CALIFICADO
+    if (rutasOrdenadas.isNotEmpty && rutasOrdenadas[0] is Map<String, dynamic>) {
+      final first = rutasOrdenadas[0] as Map<String, dynamic>;
       final lat = double.tryParse(first['latitud']?.toString() ?? '') ?? 16.9084;
       final lng = double.tryParse(first['longitud']?.toString() ?? '') ?? -92.0977;
       centroInicial = LatLng(lat, lng);
@@ -753,16 +758,36 @@ class _HomeDashboardState extends State<HomeDashboard> {
         
         Container(
           height: 250,
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 10, offset: const Offset(0, 5))]),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20), 
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 10, offset: const Offset(0, 5))]
+          ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(20),
-            child: GoogleMap(
-              initialCameraPosition: CameraPosition(target: centroInicial, zoom: 14),
-              markers: markers,
-              zoomControlsEnabled: false,
-              myLocationButtonEnabled: true,
-              mapToolbarEnabled: false,
-              onMapCreated: (controller) => _mapController = controller,
+            child: Stack(
+              children: [
+                GoogleMap(
+                  initialCameraPosition: CameraPosition(target: centroInicial, zoom: 14),
+                  markers: markers,
+                  zoomControlsEnabled: false,
+                  myLocationButtonEnabled: true,
+                  mapToolbarEnabled: false,
+                  onMapCreated: (controller) => _mapController = controller,
+                  onTap: (_) {
+                    if (_markerSeleccionado != null) {
+                      setState(() => _markerSeleccionado = null);
+                    }
+                  },
+                ),
+                
+                if (_markerSeleccionado != null)
+                  Positioned(
+                    top: 15,
+                    left: 15,
+                    right: 15,
+                    child: _buildMarcadorFlotante(_markerSeleccionado!),
+                  ),
+              ],
             ),
           ),
         ),
@@ -774,9 +799,9 @@ class _HomeDashboardState extends State<HomeDashboard> {
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             physics: const BouncingScrollPhysics(),
-            itemCount: rutas.length,
+            itemCount: rutasOrdenadas.length,
             itemBuilder: (context, index) {
-              final ruta = rutas[index];
+              final ruta = rutasOrdenadas[index];
               if (ruta is! Map<String, dynamic>) return const SizedBox.shrink();
               
               final nombre = ruta['name']?.toString() ?? 'Desconocido';
@@ -786,11 +811,16 @@ class _HomeDashboardState extends State<HomeDashboard> {
               
               final lat = double.tryParse(ruta['latitud']?.toString() ?? '0') ?? 0;
               final lng = double.tryParse(ruta['longitud']?.toString() ?? '0') ?? 0;
+              
+              final promedio = double.tryParse(ruta['promedio']?.toString() ?? '0') ?? 0.0;
 
               return GestureDetector(
                 onTap: () {
                   if (_mapController != null && lat != 0 && lng != 0) {
                     _mapController!.animateCamera(CameraUpdate.newLatLngZoom(LatLng(lat, lng), 17));
+                    setState(() {
+                      _markerSeleccionado = ruta;
+                    });
                   }
                 },
                 child: Container(
@@ -811,7 +841,18 @@ class _HomeDashboardState extends State<HomeDashboard> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(nombre, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
-                          Text(role.toUpperCase(), style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.w600)),
+                          
+                          Row(
+                            children: [
+                              Text(role.toUpperCase(), style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.w600)),
+                              if (role == 'doctor' && promedio > 0) ...[
+                                const SizedBox(width: 8),
+                                const Icon(Icons.star_rounded, color: Colors.amber, size: 12),
+                                const SizedBox(width: 2),
+                                Text(promedio.toStringAsFixed(1), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.amber)),
+                              ],
+                            ],
+                          ),
                         ],
                       ),
                     )
@@ -822,6 +863,85 @@ class _HomeDashboardState extends State<HomeDashboard> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildMarcadorFlotante(Map<String, dynamic> data) {
+    final bool isDoctor = data['role'] == 'doctor';
+    final String nombre = data['name'] ?? 'Desconocido';
+    final String? foto = data['foto'];
+    final String imgUrl = foto != null ? '${Globals.webUrl}/storage/$foto' : '';
+
+    if (!isDoctor) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white, 
+          borderRadius: BorderRadius.circular(20), 
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 15, offset: const Offset(0, 5))]
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(color: Colors.green.shade50, shape: BoxShape.circle),
+              child: Icon(Icons.local_pharmacy, color: Colors.green.shade600, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(nombre, style: TextStyle(fontWeight: FontWeight.bold, color: MiTema.azulOscuro, fontSize: 15), maxLines: 1, overflow: TextOverflow.ellipsis),
+            ),
+          ],
+        ),
+      );
+    }
+
+    String especialidad = 'Especialista';
+    if (data['especialidades'] != null && (data['especialidades'] as List).isNotEmpty) {
+      especialidad = data['especialidades'][0]['nombre'] ?? 'Especialista';
+    } else if (data['especialidad'] != null) {
+      especialidad = data['especialidad'].toString();
+    }
+    
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white, 
+        borderRadius: BorderRadius.circular(20), 
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 15, offset: const Offset(0, 5))]
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 22,
+            backgroundImage: foto != null ? NetworkImage(imgUrl) : null,
+            backgroundColor: MiTema.azulOscuro.withOpacity(0.1),
+            child: foto == null ? Icon(Icons.person, color: MiTema.azulOscuro) : null,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  nombre.startsWith("Dr") ? nombre : "Dr. $nombre", 
+                  style: TextStyle(fontWeight: FontWeight.bold, color: MiTema.azulOscuro, fontSize: 14), 
+                  maxLines: 1, 
+                  overflow: TextOverflow.ellipsis
+                ),
+                Text(
+                  especialidad, 
+                  style: const TextStyle(color: Colors.grey, fontSize: 11), 
+                  maxLines: 1, 
+                  overflow: TextOverflow.ellipsis
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+        ],
+      ),
     );
   }
 }
