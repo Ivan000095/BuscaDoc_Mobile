@@ -68,7 +68,7 @@ class Usuario {
     }
   }
 
-  static Future<Map<String, dynamic>> login(String email, String password) async {
+ static Future<Map<String, dynamic>> login(String email, String password) async {
     try {
       final url = Uri.parse('${Globals.webUrl}/api/auth/login');
       final deviceName = Platform.isAndroid ? 'Android_Device' : 'iOS_Device';
@@ -87,6 +87,15 @@ class Usuario {
 
       if (response.statusCode == 200 && jsonResponse['success'] == true) {
         final userData = jsonResponse['data']['user'];
+        final String userRole = userData['role'] ?? '';
+
+        if (userRole != 'doctor' && userRole != 'paciente') {
+          return {
+            'success': false,
+            'message': 'Acceso denegado. Esta aplicación es exclusiva para pacientes y doctores.',
+          };
+        }
+
         await _guardarSesion(userData, jsonResponse['data']['token']);
         Globals.fotoPerfilActual = userData['foto'];
         
