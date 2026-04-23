@@ -50,60 +50,63 @@ class _HomeDashboardState extends State<HomeDashboard> {
     super.dispose();
   }
 
-  Future<void> _showDashboardData() async {
-    try {
-      final token = await Usuario.obtenerToken();
-      
-      if (token == null) {
-        if (mounted) setState(() => _cargando = false);
-        return;
-      }
-
-      final dashboardFuture = Usuario.dashboard(token);
-      final especialidadesDashboardFuture = Especialidades.getDashboardEspecialidades();
-      final especialidadesBuscadorFuture = Especialidades.all();
-
-      final results = await Future.wait([
-        dashboardFuture, 
-        especialidadesDashboardFuture, 
-        especialidadesBuscadorFuture
-      ], eagerError: false);
-
-      if (!mounted) return;
-
-      setState(() {
-        final dashboardResponse = results[0];
-        if (dashboardResponse is Map<String, dynamic> && dashboardResponse['success'] == true) {
-          _dashboard = dashboardResponse['data'] as Map<String, dynamic>?;
-        }
-
-        final espDashboardRaw = results[1];
-        if (espDashboardRaw is List) {
-          _dashboard?['especialidades'] = espDashboardRaw.map((e) {
-            if (e is Especialidades) return e;
-            if (e is Map<String, dynamic>) return Especialidades.fromJson(e);
-            return null;
-          }).whereType<Especialidades>().toList();
-        }
-
-        final espBuscadorRaw = results[2];
-        if (espBuscadorRaw is List) {
-          _listaEspecialidades = espBuscadorRaw.map((e) {
-            if (e is Especialidades) return e;
-            if (e is Map<String, dynamic>) return Especialidades.fromJson(e);
-            return null;
-          }).whereType<Especialidades>().toList();
-        }
-        
-        _cargando = false;
-      });
-    } catch (e) {
-      print('❌ Error cargando dashboard: $e');
-      if (mounted) {
-        setState(() => _cargando = false);
-      }
+Future<void> _showDashboardData() async {
+  try {
+    final token = await Usuario.obtenerToken();
+    
+    if (token == null) {
+      print('❌ No hay token disponible');
+      if (mounted) setState(() => _cargando = false);
+      return;
     }
+
+    print('🔍 INICIANDO CARGA DE DASHBOARD...');
+    print('  Token: ${token.substring(0, 20)}...');
+
+    final dashboardFuture = Usuario.dashboard(token);
+    final especialidadesDashboardFuture = Especialidades.getDashboardEspecialidades();
+    final especialidadesBuscadorFuture = Especialidades.all();
+
+    final results = await Future.wait([
+      dashboardFuture, 
+      especialidadesDashboardFuture, 
+      especialidadesBuscadorFuture
+    ], eagerError: false);
+
+    if (!mounted) return;
+
+    setState(() {
+      final dashboardResponse = results[0];
+      
+      print('📦 RESPONSE DEL DASHBOARD:');
+      print('  Tipo: ${dashboardResponse.runtimeType}');
+      print('  Contenido: $dashboardResponse');
+      
+      if (dashboardResponse is Map<String, dynamic>) {
+        print('  Success: ${dashboardResponse['success']}');
+        print('  Data: ${dashboardResponse['data']}');
+        
+        if (dashboardResponse['success'] == true) {
+          _dashboard = dashboardResponse['data'] as Map<String, dynamic>?;
+          
+          // 🔍 Verificar campos específicos
+          print(' CAMPOS DEL DASHBOARD:');
+          print('  Keys: ${_dashboard?.keys.toList()}');
+          print('  proxima_cita: ${_dashboard?['proxima_cita']}');
+          print('  ultima_review: ${_dashboard?['ultima_review']}');
+          print('  ultima_question: ${_dashboard?['ultima_question']}');
+        }
+      }
+
+      // ... resto del código ...
+      _cargando = false;
+    });
+  } catch (e, stackTrace) {
+    print('❌ ERROR CARGANDO DASHBOARD: $e');
+    print('Stack trace: $stackTrace');
+    if (mounted) setState(() => _cargando = false);
   }
+}
 
   @override
   Widget build(BuildContext context) {
