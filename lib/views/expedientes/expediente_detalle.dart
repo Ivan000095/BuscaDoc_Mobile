@@ -5,6 +5,7 @@ import 'package:buscadoc_mobile/model/expediente.dart';
 import 'package:buscadoc_mobile/theme/tema.dart';
 import 'package:buscadoc_mobile/model/expediente_detalle_controller.dart';
 import 'package:magicoon_icons/magicoon.dart';
+import 'package:buscadoc_mobile/utils/global.dart';
 
 class ExpedienteDetalleView extends StatelessWidget {
   final Expediente expedienteInicial;
@@ -14,9 +15,12 @@ class ExpedienteDetalleView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(ExpedienteDetalleController(expedienteId: expedienteInicial.id));
+    bool esPropio = expedienteInicial.parentesco.toLowerCase() == 'yo mismo';
+    String? fotoUsuario = Globals.fotoPerfilActual;
+    bool tieneFoto = esPropio && fotoUsuario != null && fotoUsuario.isNotEmpty;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7F9), // Fondo un poco más azulado/grisáceo típico de apps médicas
+      backgroundColor: const Color(0xFFF5F7F9),
       appBar: AppBar(
         title: const Text("Ficha Médica", style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
@@ -66,13 +70,23 @@ class ExpedienteDetalleView extends StatelessWidget {
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(15),
+                      width: 75,
+                      height: 75,
+                      padding: tieneFoto ? EdgeInsets.zero : const EdgeInsets.all(15), 
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.2),
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.white.withOpacity(0.5), width: 2),
+                        image: tieneFoto
+                            ? DecorationImage(
+                                image: NetworkImage(fotoUsuario!), 
+                                fit: BoxFit.cover,
+                              )
+                            : null,
                       ),
-                      child: const Icon(Icons.person_outline, color: Colors.white, size: 40),
+                      child: tieneFoto
+                          ? null
+                          : const Icon(Icons.person_outline, color: Colors.white, size: 40),
                     ),
                     const SizedBox(width: 20),
                     Expanded(

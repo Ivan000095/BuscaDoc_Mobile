@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 void main() async{
   WidgetsFlutterBinding.ensureInitialized(); 
@@ -13,7 +14,24 @@ void main() async{
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform, 
   );
+  await obtenerEImprimirToken();
   runApp(const MyApp());
+}
+
+Future<void> obtenerEImprimirToken() async {
+  try {
+    await FirebaseMessaging.instance.requestPermission();
+
+    String? token = await FirebaseMessaging.instance.getToken();
+
+    print("====================================");
+    print("🔑 TOKEN FCM DEL DISPOSITIVO:");
+    print(token);
+    print("====================================");
+    
+  } catch (e) {
+    print("❌ Error al obtener el token: $e");
+  }
 }
 
 class MyApp extends StatelessWidget {

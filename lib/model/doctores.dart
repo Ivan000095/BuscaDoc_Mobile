@@ -106,8 +106,49 @@ class Doctores {
     return null;
   }
 
+  static String _obtenerEntrada(Map<String, dynamic> json) {
+    if (json['horarioentrada'] != null && json['horarioentrada'].toString().isNotEmpty) {
+      return json['horarioentrada'].toString();
+    }
+    
+    var disponibilidades = json['disponibilidades'] ?? json['disponibilidad'] ?? [];
+    if (disponibilidades is List && disponibilidades.isNotEmpty) {
+      int hoyDart = DateTime.now().weekday;
+      int hoyLaravel = hoyDart == 7 ? 0 : hoyDart; 
+      
+      for (var disp in disponibilidades) {
+        if (disp['dia_semana'] == hoyLaravel) {
+          String inicio = disp['hora_inicio'].toString();
+          return inicio.length >= 5 ? inicio.substring(0, 5) : inicio; // Retorna "09:00"
+        }
+      }
+    }
+    return 'Descanso';
+  }
+
+  static String _obtenerSalida(Map<String, dynamic> json) {
+    if (json['horariosalida'] != null && json['horariosalida'].toString().isNotEmpty) {
+      return json['horariosalida'].toString();
+    }
+    
+    var disponibilidades = json['disponibilidades'] ?? json['disponibilidad'] ?? [];
+    if (disponibilidades is List && disponibilidades.isNotEmpty) {
+      int hoyDart = DateTime.now().weekday;
+      int hoyLaravel = hoyDart == 7 ? 0 : hoyDart; 
+      
+      for (var disp in disponibilidades) {
+        if (disp['dia_semana'] == hoyLaravel) {
+          String fin = disp['hora_fin'].toString();
+          return fin.length >= 5 ? fin.substring(0, 5) : fin;
+        }
+      }
+    }
+    return '';
+  }
+
   factory Doctores.fromJson(Map<String, dynamic> json) {
     var datosDisponibilidad = json['disponibilidades'] ?? json['disponibilidad'] ?? [];
+    
     return Doctores(
       id: json['id'] ?? 0,
       idUsuario: json['user_id'] ?? json['user']?['id'] ?? 0,
@@ -117,16 +158,18 @@ class Doctores {
       fecha: _parsearFecha(json['fecha']),
       image: _fixImageUrl(json['user']?['foto'] ?? json['image']),
       telefono: json['telefono']?.toString() ?? 'Sin teléfono',
-      horarioentrada: json['horarioentrada']?.toString() ?? 'Descanso',
-      horariosalida: json['horariosalida']?.toString() ?? '',
+      
+      horarioentrada: _obtenerEntrada(json),
+      horariosalida: _obtenerSalida(json),
+      
       idiomas: json['idioma']?.toString() ?? '',
       cedula: json['cedula']?.toString() ?? '',
       rol: json['role']?.toString() ?? 'doctor',
       costos: _parsearCosto(json['costos']),
       promedio: (json['promedio'] as num?)?.toDouble() ?? 0.0,
-      latitud: json['latitud']?.toString(),
-      longitud: json['longitud']?.toString(),
-      citas: json['citas'] as bool?,
+      latitud: json['latitud']?.toString() ?? json['user']?['latitud']?.toString(),
+      longitud: json['longitud']?.toString() ?? json['user']?['longitud']?.toString(),
+      citas: json['citas'] as bool? ?? false, // <-- Cuidado con los booleanos nulos
       disponibilidades: datosDisponibilidad is List ? datosDisponibilidad : [],
     );
   }

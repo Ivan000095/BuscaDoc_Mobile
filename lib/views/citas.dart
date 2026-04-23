@@ -32,15 +32,12 @@ class MisCitasView extends StatelessWidget {
         if (controller.citasList.isEmpty) {
           return _buildEmptyState();
         }
-        // ==========================================
-        // 1. LÓGICA DE AGRUPACIÓN Y SEPARACIÓN
-        // ==========================================
+        
         DateTime hoy = DateTime.now();
         DateTime hoyDate = DateTime(hoy.year, hoy.month, hoy.day);
         List<dynamic> activas = [];
         List<dynamic> historial = [];
         for (var cita in controller.citasList) {
-          // Extraemos la fecha limpia para evitar el error de la "T" y la "Z"
           String fechaLimpia = cita['fecha'].toString().split('T')[0];
           DateTime dateOnly = DateTime.parse(fechaLimpia);
           String estado = cita['estado'] ?? 'pendiente';
@@ -51,7 +48,6 @@ class MisCitasView extends StatelessWidget {
             activas.add(cita);
           }
         }
-        // Ordenar historial de más reciente a más antiguo (Corrección aplicada)
         historial.sort((a, b) {
           String soloFechaA = a['fecha'].toString().split('T')[0];
           String soloFechaB = b['fecha'].toString().split('T')[0];
@@ -59,18 +55,14 @@ class MisCitasView extends StatelessWidget {
           DateTime dtB = DateTime.parse("$soloFechaB ${b['hora_inicio']}");
           return dtB.compareTo(dtA);
         });
-        // Agrupar activas por fecha
         Map<String, List<dynamic>> activasGrouped = {};
         for (var cita in activas) {
           String dateKey = cita['fecha'].toString().split('T')[0];
           activasGrouped.putIfAbsent(dateKey, () => []).add(cita);
         }
         var sortedKeys = activasGrouped.keys.toList()..sort();
-        // ==========================================
-        // 2. CONSTRUCCIÓN DE LA LISTA DE WIDGETS
-        // ==========================================
+       
         List<Widget> listItems = [];
-        // --- AGENDA ACTIVA ---
         if (sortedKeys.isNotEmpty) {
           for (var dateStr in sortedKeys) {
             listItems.add(_buildDateHeader(dateStr));
@@ -79,7 +71,6 @@ class MisCitasView extends StatelessWidget {
             }
           }
         }
-        // --- HISTORIAL ---
         if (historial.isNotEmpty) {
           listItems.add(_buildHistorialHeader());
           for (var cita in historial) {
@@ -114,9 +105,7 @@ class MisCitasView extends StatelessWidget {
       }),
     );
   }
-  // ==========================================
-  // WIDGETS DE ENCABEZADOS
-  // ==========================================
+  
   Widget _buildDateHeader(String dateStr) {
     DateTime date = DateTime.parse(dateStr);
     DateTime hoy = DateTime.now();
@@ -461,7 +450,14 @@ class MisCitasView extends StatelessWidget {
           children: const [
             SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.grey)),
             SizedBox(width: 8),
-            Text("Esperando respuesta a tu propuesta...", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 11)),
+            Expanded(
+              child: Text(
+                "Esperando respuesta a tu propuesta...", 
+                style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 11),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
       );
@@ -681,6 +677,7 @@ class MisCitasView extends StatelessWidget {
       ),
     );
   }
+
   void _mostrarBottomSheetPropuesta(BuildContext context, Map<String, dynamic> cita) {
     final Rxn<DateTime> selectedDate = Rxn<DateTime>();
     final RxnString selectedSlot = RxnString();
@@ -688,116 +685,127 @@ class MisCitasView extends StatelessWidget {
     controller.availableSlots.clear();
     controller.slotMessage("Elige una fecha para ver horarios disponibles");
     int doctorId = cita['doctor_id'] ?? cita['doctor']['id'];
+    
     Get.bottomSheet(
-      Container(
-        padding: const EdgeInsets.all(25),
-        decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(30))),
-        child: Obx(
-          () => Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(MagicoonRegular.calendar, color: MiTema.azulOscuro),
-                  const SizedBox(width: 10),
-                  const Text("Proponer Nuevo Horario", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                ],
-              ),
-              const SizedBox(height: 25),
-              const Text("1. Selecciona la nueva fecha", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
-              const SizedBox(height: 8),
-              InkWell(
-                onTap: () async {
-                  DateTime? picked = await showDatePicker(
-                    context: context,
-                    initialDate: DateTime.now().add(const Duration(days: 1)),
-                    firstDate: DateTime.now(),
-                    lastDate: DateTime.now().add(const Duration(days: 90)),
-                    builder: (context, child) {
-                      return Theme(data: Theme.of(context).copyWith(colorScheme: ColorScheme.light(primary: MiTema.azulOscuro)), child: child!);
-                    },
-                  );
-                  if (picked != null) {
-                    selectedDate.value = picked;
-                    selectedSlot.value = null;
-                    String fechaFormateada = DateFormat('yyyy-MM-dd').format(picked);
-                    controller.fetchDisponibilidad(doctorId, fechaFormateada);
-                  }
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
-                  decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(15)),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        selectedDate.value != null ? DateFormat('dd / MM / yyyy').format(selectedDate.value!) : "dd / mm / aaaa",
-                        style: TextStyle(color: selectedDate.value != null ? Colors.black87 : Colors.grey, fontWeight: FontWeight.bold),
-                      ),
-                      const Icon(MagicoonRegular.calendar, size: 18, color: Colors.grey),
-                    ],
+      // 👇 1. Agregamos SingleChildScrollView
+      SingleChildScrollView(
+        child: Container(
+          // 👇 2. Cambiamos EdgeInsets.all(25) por EdgeInsets.only(...) sumando el teclado
+          padding: EdgeInsets.only(
+            top: 25,
+            left: 25,
+            right: 25,
+            bottom: 25 + MediaQuery.of(context).viewInsets.bottom,
+          ),
+          decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(30))),
+          child: Obx(
+            () => Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(MagicoonRegular.calendar, color: MiTema.azulOscuro),
+                    const SizedBox(width: 10),
+                    const Text("Proponer Nuevo Horario", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+                const SizedBox(height: 25),
+                const Text("1. Selecciona la nueva fecha", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
+                const SizedBox(height: 8),
+                InkWell(
+                  onTap: () async {
+                    DateTime? picked = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now().add(const Duration(days: 1)),
+                      firstDate: DateTime.now(),
+                      lastDate: DateTime.now().add(const Duration(days: 90)),
+                      builder: (context, child) {
+                        return Theme(data: Theme.of(context).copyWith(colorScheme: ColorScheme.light(primary: MiTema.azulOscuro)), child: child!);
+                      },
+                    );
+                    if (picked != null) {
+                      selectedDate.value = picked;
+                      selectedSlot.value = null;
+                      String fechaFormateada = DateFormat('yyyy-MM-dd').format(picked);
+                      controller.fetchDisponibilidad(doctorId, fechaFormateada);
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+                    decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(15)),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          selectedDate.value != null ? DateFormat('dd / MM / yyyy').format(selectedDate.value!) : "dd / mm / aaaa",
+                          style: TextStyle(color: selectedDate.value != null ? Colors.black87 : Colors.grey, fontWeight: FontWeight.bold),
+                        ),
+                        const Icon(MagicoonRegular.calendar, size: 18, color: Colors.grey),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 20),
-              const Text("2. Horarios disponibles", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
-              const SizedBox(height: 8),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(15),
-                decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(15), border: Border.all(color: Colors.grey.shade200)),
-                child: controller.isFetchingSlots.value
-                    ? Center(child: CircularProgressIndicator(color: MiTema.azulOscuro))
-                    : controller.availableSlots.isEmpty
-                    ? Text(controller.slotMessage.value, style: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic), textAlign: TextAlign.center)
-                    : Wrap(
-                        spacing: 8, runSpacing: 8, alignment: WrapAlignment.center,
-                        children: controller.availableSlots.map((hora) {
-                          bool isSelected = selectedSlot.value == hora;
-                          return ChoiceChip(
-                            label: Text(hora, style: TextStyle(color: isSelected ? Colors.white : MiTema.azulOscuro, fontWeight: FontWeight.bold)),
-                            selected: isSelected,
-                            selectedColor: MiTema.azulOscuro,
-                            backgroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: MiTema.azulOscuro)),
-                            onSelected: (bool selected) { if (selected) selectedSlot.value = hora; },
-                          );
-                        }).toList(),
-                      ),
-              ),
-              const SizedBox(height: 20),
-              const Text("Motivo del cambio", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
-              const SizedBox(height: 8),
-              TextField(
-                controller: motivoCtrl,
-                decoration: InputDecoration(hintText: "Ej. Me surgió un contratiempo...", filled: true, fillColor: Colors.grey.shade100, border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none)),
-              ),
-              const SizedBox(height: 25),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: MiTema.azulOscuro, padding: const EdgeInsets.symmetric(vertical: 15), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)), disabledBackgroundColor: Colors.grey.shade300),
-                  onPressed: (selectedDate.value != null && selectedSlot.value != null)
-                      ? () {
-                          if (motivoCtrl.text.trim().isEmpty) {
-                            Get.snackbar('Atención', 'Por favor, escribe un motivo.', backgroundColor: Colors.orange.shade100);
-                            return;
-                          }
-                          String fechaFormat = DateFormat('yyyy-MM-dd').format(selectedDate.value!);
-                          controller.proponerCambio(cita['id'], fechaFormat, selectedSlot.value!, motivoCtrl.text.trim());
-                        }
-                      : null,
-                  child: const Text("Enviar Propuesta", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 20),
+                const Text("2. Horarios disponibles", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
+                const SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(15),
+                  decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(15), border: Border.all(color: Colors.grey.shade200)),
+                  child: controller.isFetchingSlots.value
+                      ? Center(child: CircularProgressIndicator(color: MiTema.azulOscuro))
+                      : controller.availableSlots.isEmpty
+                      ? Text(controller.slotMessage.value, style: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic), textAlign: TextAlign.center)
+                      : Wrap(
+                          spacing: 8, runSpacing: 8, alignment: WrapAlignment.center,
+                          children: controller.availableSlots.map((hora) {
+                            bool isSelected = selectedSlot.value == hora;
+                            return ChoiceChip(
+                              label: Text(hora, style: TextStyle(color: isSelected ? Colors.white : MiTema.azulOscuro, fontWeight: FontWeight.bold)),
+                              selected: isSelected,
+                              selectedColor: MiTema.azulOscuro,
+                              backgroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: MiTema.azulOscuro)),
+                              onSelected: (bool selected) { if (selected) selectedSlot.value = hora; },
+                            );
+                          }).toList(),
+                        ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 20),
+                const Text("Motivo del cambio", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: motivoCtrl,
+                  decoration: InputDecoration(hintText: "Ej. Me surgió un contratiempo...", filled: true, fillColor: Colors.grey.shade100, border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none)),
+                ),
+                const SizedBox(height: 25),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(backgroundColor: MiTema.azulOscuro, padding: const EdgeInsets.symmetric(vertical: 15), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)), disabledBackgroundColor: Colors.grey.shade300),
+                    onPressed: (selectedDate.value != null && selectedSlot.value != null)
+                        ? () {
+                            if (motivoCtrl.text.trim().isEmpty) {
+                              Get.snackbar('Atención', 'Por favor, escribe un motivo.', backgroundColor: Colors.orange.shade100);
+                              return;
+                            }
+                            String fechaFormat = DateFormat('yyyy-MM-dd').format(selectedDate.value!);
+                            controller.proponerCambio(cita['id'], fechaFormat, selectedSlot.value!, motivoCtrl.text.trim());
+                          }
+                        : null,
+                    child: const Text("Enviar Propuesta", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
-      isScrollControlled: true,
+      isScrollControlled: true, // Esto ya lo tenías, es clave para que el teclado funcione
     );
   }
+  
   void _mostrarModalReagendarLibre(BuildContext context, Map<String, dynamic> cita) {
     final Rxn<DateTime> selectedDate = Rxn<DateTime>();
     final RxnString selectedSlot = RxnString();

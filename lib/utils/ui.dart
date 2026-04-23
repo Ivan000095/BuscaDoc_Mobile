@@ -189,7 +189,7 @@ class UIUtils {
                 child: ClipOval(
                   child: (fotoUrl != null && fotoUrl.isNotEmpty)
                       ? Image.network(
-                          fotoUrl.startsWith('http') ? fotoUrl : baseUrl + fotoUrl,
+                          fotoUrl.startsWith('https') ? fotoUrl : baseUrl + fotoUrl,
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) => const Icon(Icons.person, size: 30, color: Colors.grey),
                         )
