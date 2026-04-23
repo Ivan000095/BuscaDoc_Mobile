@@ -16,7 +16,9 @@ class UIUtils {
   static AppBar appbar({
     required String title,
     String? fotoUrl,
+    int notificationCount = 0,
     VoidCallback? onProfileTap,
+    VoidCallback? onNotificationTap,
   }) {
     return AppBar(
       backgroundColor: MiTema.azulOscuro,
@@ -24,10 +26,48 @@ class UIUtils {
       title: Image.asset('assets/logob.png', height: 40),
       centerTitle: true,
       actions: [
+        Stack(
+          alignment: Alignment.center,
+          children: [
+            IconButton(
+              icon: const Icon(MagicoonRegular.bell, color: Colors.white, size: 28),
+              onPressed: onNotificationTap,
+            ),
+            if (notificationCount > 0)
+              Positioned(
+                right: 8,
+                top: 10,
+                child: IgnorePointer(
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: MiTema.azulOscuro, width: 1.5),
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 14,
+                      minHeight: 14,
+                    ),
+                    child: Text(
+                      notificationCount > 9 ? '9+' : '$notificationCount',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 8,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+
         GestureDetector(
           onTap: onProfileTap,
           child: Padding(
-            padding: const EdgeInsets.only(right: 16.0),
+            padding: const EdgeInsets.only(right: 16.0, left: 8.0),
             child: Container(
               height: 36,
               width: 36,
@@ -63,7 +103,7 @@ class UIUtils {
       ],
     );
   }
-
+  
   static void showRoundedSnackBar(
     BuildContext context, 
     String message, 

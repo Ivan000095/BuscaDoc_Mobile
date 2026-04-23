@@ -18,6 +18,9 @@ import 'package:buscadoc_mobile/views/doctor/lista_doctores.dart';
 import 'package:buscadoc_mobile/views/chat/contactos.dart';
 import 'package:buscadoc_mobile/views/citas.dart';
 import 'package:magicoon_icons/magicoon.dart';
+import 'package:buscadoc_mobile/providers/alerta_provider.dart';
+import 'package:provider/provider.dart';
+import 'package:buscadoc_mobile/views/alerta.dart';
 
 
 class VistaInicio extends StatefulWidget {
@@ -197,12 +200,32 @@ class _VistaInicioState extends State<VistaInicio>
   }
 
   @override
-  Widget build(BuildContext context) {
+ // Asegúrate de tener importado el Provider de alertas arriba:
+// import 'package:provider/provider.dart';
+// import '../providers/alerta_provider.dart';
+
+Widget build(BuildContext context) {
     String urlFinal = widget.userFoto;
+    
+    // Obtenemos el provider para leer el contador de notificaciones
+    final alertaProv = Provider.of<AlertaProvider>(context);
 
     return SafeArea(
       child: Scaffold(
-        appBar: UIUtils.appbar(title: 'BuscaDoc', fotoUrl: urlFinal),
+        appBar: UIUtils.appbar(
+          title: 'BuscaDoc', 
+          fotoUrl: urlFinal,
+          
+          notificationCount: alertaProv.unreadCount, 
+
+          onNotificationTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const AlertaScreen()),
+            );
+          },
+          
+        ),
         drawer: UIUtils.buildMenuLateral(
           context,
           userName: widget.userName,
@@ -213,7 +236,7 @@ class _VistaInicioState extends State<VistaInicio>
         body: _bottom(),
       ),
     );
-  }
+}
 
   Widget _bottom() {
     final Color barColor = MiTema.azulOscuro;
